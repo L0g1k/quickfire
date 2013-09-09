@@ -1,0 +1,33 @@
+{
+    "name": "Quickfire",
+    "version": "0.0",
+    "manifest_version": 2,
+    "description": "The fastest way to code HTML websites",
+    "icons": {
+        "128": "src/chrome/img/icon_128.png"
+    },
+    "app": {
+        "background": {
+            "scripts": [
+                "src/thirdparty/requirejs/require.js",
+                "src/chrome/lib/webserver.js",
+                "src/chrome/lib/web-server-simple.js",
+                "src/chrome/lib/syncFS.js",
+                "src/chrome/background.js"
+            ]
+        }
+    },
+    "permissions": [
+        {
+            "socket": ["tcp-connect", "tcp-listen"]
+        },
+        "syncFileSystem",
+        "storage",
+        "fileSystem",
+        "fileSystem.retainEntries",
+        "fileSystem.write",
+        "fileSystem.directory"
+    ],
+    "offline_enabled": true
+
+}

@@ -30,11 +30,15 @@ require.config({
         "text"      : "thirdparty/text/text",
         "i18n"      : "thirdparty/i18n/i18n"
     },
+    config : {
+        "file/PlatformFileSystem" : {filesystem: "html5"},
+        "preferences/PreferencesManager" : {persistentStorage : "chrome"}
+    },
     // Use custom brackets property until CEF sets the correct navigator.language
     // NOTE: When we change to navigator.language here, we also should change to
     // navigator.language in ExtensionLoader (when making require contexts for each
     // extension).
-    locale: window.localStorage.getItem("locale") || (typeof (brackets) !== "undefined" ? brackets.app.language : navigator.language)
+    locale: "en-US"
 });
 
 /**
@@ -171,7 +175,7 @@ define(function (require, exports, module) {
         EditorManager.setEditorHolder($("#editor-holder"));
 
         // Let the user know Brackets doesn't run in a web browser yet
-        if (brackets.inBrowser) {
+        if (brackets.inBrowser && !brackets.chromeApp) {
             Dialogs.showModalDialog(
                 DefaultDialogs.DIALOG_ID_ERROR,
                 Strings.ERROR_IN_BROWSER_TITLE,

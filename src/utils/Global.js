@@ -35,7 +35,7 @@ define(function (require, exports, module) {
     "use strict";
     
     var configJSON = require("text!config.json");
-    
+
     // Define core brackets namespace if it isn't already defined
     //
     // We can't simply do 'brackets = {}' to define it in the global namespace because
@@ -45,7 +45,7 @@ define(function (require, exports, module) {
     //
     // Taken from:
     //   http://stackoverflow.com/questions/3277182/how-to-get-the-global-object-in-javascript
-    var Fn = Function, global = (new Fn("return this"))();
+    var Fn = Function, global = window.chrome ? window : (new Fn("return this"))();
     if (!global.brackets) {
         global.brackets = {};
     }
@@ -76,7 +76,9 @@ define(function (require, exports, module) {
     }
     
     global.brackets.inBrowser = !global.brackets.hasOwnProperty("fs");
-    
+
+    global.brackets.chromeApp = chrome && chrome.app && chrome.app.runtime;
+
     global.brackets.nativeMenus = (!global.brackets.inBrowser && (global.brackets.platform !== "linux"));
     
     global.brackets.isLocaleDefault = function () {
@@ -85,10 +87,13 @@ define(function (require, exports, module) {
     
     global.brackets.getLocale = function () {
         // By default use the locale that was determined in brackets.js
-        return global.localStorage.getItem("locale") || global.require.s.contexts._.config.locale;
+        return global.brackets.chromeApp ? "en-US" : (global.localStorage.getItem("locale") || global.require.s.contexts._.config.locale);
     };
 
     global.brackets.setLocale = function (locale) {
+        if(global.brackets.chromeApp)
+            return;
+
         if (locale) {
             global.localStorage.setItem("locale", locale);
         } else {
@@ -97,7 +102,10 @@ define(function (require, exports, module) {
     };
     
     // Create empty app namespace if running in-browser
-    if (!global.brackets.app) {
+    if(global.brackets.chromeApp) {
+        global.brackets.app = require("chrome/app");
+        global.brackets.fs = require("chrome/fs");
+    } else if (!global.brackets.app) {
         global.brackets.app = {};
     }
     

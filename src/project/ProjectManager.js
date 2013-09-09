@@ -882,8 +882,8 @@ define(function (require, exports, module) {
         // restore project tree state from last time this project was open
         _projectInitialLoad.previous = _prefs.getValue(_getTreeStateKey(rootPath)) || [];
 
-        // Populate file tree as long as we aren't running in the browser
-        if (!brackets.inBrowser) {
+        // Populate file tree as long as we aren't running in the browser (except Chrome Apps)
+        if (!brackets.inBrowser || brackets.chromeApp) {
             // Point at a real folder structure on local disk
             NativeFileSystem.requestNativeFileSystem(rootPath,
                 function (fs) {
@@ -948,11 +948,18 @@ define(function (require, exports, module) {
                         // project directory.
                         // TODO (issue #267): When Brackets supports having no project directory
                         // defined this code will need to change
+                        if(brackets.chromeApp) {
+                            _projectRoot = {
+                                fullPath: "/"
+                            };
+                            return;
+                        }
+
                         _loadProject(_getWelcomeProjectPath()).always(function () {
-                            // Make sure not to reject the original deferred until the fallback
-                            // project is loaded, so we don't violate expectations that there is always
-                            // a current project before continuing after _loadProject().
-                            result.reject();
+                        // Make sure not to reject the original deferred until the fallback
+                        // project is loaded, so we don't violate expectations that there is always
+                        // a current project before continuing after _loadProject().
+                        result.reject();
                         });
                     });
                 }

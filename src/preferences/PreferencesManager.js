@@ -31,35 +31,36 @@
  */
 define(function (require, exports, module) {
     "use strict";
-    
+
     var PreferenceStorage = require("preferences/PreferenceStorage").PreferenceStorage,
         FileUtils         = require("file/FileUtils"),
         ExtensionLoader   = require("utils/ExtensionLoader"),
-        CollectionUtils   = require("utils/CollectionUtils");
-    
+        CollectionUtils   = require("utils/CollectionUtils"),
+        ChromeStorage = require("preferences/ChromeStorage");
+
     /**
      * The local storage ID
      * @const
      * @type {string}
      */
     var PREFERENCES_CLIENT_ID = "com.adobe.brackets.preferences";
-    
+
     /**
      * The prefix used in the generated client ID
      * @const
      * @type {string}
      */
     var CLIENT_ID_PREFIX = "com.adobe.brackets.";
-    
-    
+
+
     // Private Properties
     var preferencesKey,
         prefStorage,
         persistentStorage,
         extensionPaths,
         doLoadPreferences   = false;
-    
-    
+
+
     /**
      * @private
      * Returns an array with the extension paths used in Brackets. The result is stored on a
@@ -69,7 +70,7 @@ define(function (require, exports, module) {
     function _getExtensionPaths() {
         if (!extensionPaths) {
             var dirPath = FileUtils.getNativeBracketsDirectoryPath();
-            
+
             extensionPaths = [
                 dirPath + "/extensions/default/",
                 dirPath + "/extensions/dev/",
@@ -102,12 +103,12 @@ define(function (require, exports, module) {
         }
         return clientID;
     }
-    
+
     /**
      * Retreive the preferences data for the given clientID.
      * @param {string|{id: string, uri: string}} clientID - A unique identifier or a requireJS module object
      * @param {string} defaults - Default preferences stored as JSON
-     * @return {PreferenceStorage} 
+     * @return {PreferenceStorage}
      */
     function getPreferenceStorage(clientID, defaults) {
         if (!clientID || (typeof clientID === "object" && (!clientID.id || !clientID.uri))) {
@@ -160,7 +161,7 @@ define(function (require, exports, module) {
      * @private
      * Initialize persistent storage implementation
      */
-    function _initStorage(storage) {
+    function initStorage(storage) {
         persistentStorage = storage;
 
         if (doLoadPreferences) {
@@ -172,21 +173,21 @@ define(function (require, exports, module) {
             _reset();
         }
     }
-    
+
     /**
      * This method handles the copy of all old prefs to the new prefs
      * TODO: remove All calls to this function and the function itself
-     * 
+     *
      * @param {!PreferenceStorage} newPrefs The new PreferenceStorage
      * @param {!string} oldID The id of the old PreferenceStorage
      */
     function handleClientIdChange(newPrefs, oldID) {
         if (prefStorage[oldID]) {
             var oldPrefs = getPreferenceStorage(oldID);
-            
+
             if (!newPrefs.getValue("newClientID")) {
                 var data = oldPrefs.getAllValues();
-                
+
                 if (!$.isEmptyObject(data)) {
                     newPrefs.setAllValues(data, true);
                 }
@@ -198,8 +199,8 @@ define(function (require, exports, module) {
 
     // Check localStorage for a preferencesKey. Production and unit test keys
     // are used to keep preferences separate within the same storage implementation.
-    preferencesKey = localStorage.getItem("preferencesKey");
-    
+    //preferencesKey = localStorage.getItem("preferencesKey");
+
     if (!preferencesKey) {
         // use default key if none is found
         preferencesKey = PREFERENCES_CLIENT_ID;
@@ -210,13 +211,22 @@ define(function (require, exports, module) {
     }
 
     // Use localStorage by default
-    _initStorage(localStorage);
+    if (module.config().persistentStorage != "chrome"){
+        initStorage(localStorage);
+    }
+    else{
+        //ChromeStorage.initStorage(function(){
+        initStorage(ChromeStorage);
+        //});
+    }
+
 
     // Public API
     exports.getPreferenceStorage    = getPreferenceStorage;
     exports.savePreferences         = savePreferences;
     exports.handleClientIdChange    = handleClientIdChange;
     exports.getClientID             = getClientID;
+    exports.initStorage             = initStorage;
 
     // Unit test use only
     exports._reset                  = _reset;

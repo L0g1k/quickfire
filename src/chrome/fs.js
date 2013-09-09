@@ -1,0 +1,256 @@
+/*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
+/*global define */
+
+define(function (require, exports, module) {
+    "use strict";
+
+    var NO_ERROR = 0;
+    var ERR_UNKNOWN = 1;
+    var ERR_INVALID_PARAMS = 2;
+    var ERR_NOT_FOUND = 3;
+    var ERR_CANT_READ = 4;
+    var ERR_UNSUPPORTED_ENCODING = 5;
+    var ERR_CANT_WRITE = 6;
+    var ERR_OUT_OF_SPACE = 7;
+    var ERR_NOT_FILE = 8;
+    var ERR_NOT_DIRECTORY = 9;
+
+    var entries = [];
+    var ENTRY_KEY = 'entries';
+
+    // Brackets will often stat a file, get it's path, then ask for it again right away through readFile.
+    var statCache = {};
+    function saveEntryReference(entryId) {
+        var entries;
+
+        try {
+            chrome.storage.local.get(ENTRY_KEY, function(entries) {
+                if(Object.keys(entries).length === 0) {
+                    entries = { entries: [] };
+                }
+                entries.entries.push(entryId);
+                var storage = {};
+                storage[ENTRY_KEY] = entries.entries;
+                chrome.storage.local.set(storage);
+            });
+        } catch (e) {
+            console.error('Entry storage not found', e.message);
+        }
+    }
+
+    function getEntryReferences(callback) {
+        chrome.storage.local.get(ENTRY_KEY, function(entries) {
+            callback(Object.keys(entries).length ? entries.entries : []);
+        });
+    }
+
+    function readdir(path, callback) {
+        console.debug("readdir", path);
+        getEntryReferences(function(entries){
+            entries.forEach(function(id){
+                chrome.fileSystem.isRestorable(id, function(){
+                    chrome.fileSystem.restoreEntry(id, function(entry){
+                        if(entry.isDirectory && path == (entry.fullPath + '/')) {
+                            entry.createReader().readEntries(function(entries){
+                                callback(brackets.fs.NO_ERROR, entries.map(function(entry){
+                                    return entry.name;
+                                }));
+                            });
+                        } else {
+                            callback(brackets.fs.ERR_NOT_DIRECTORY);
+                        }
+                    });
+                });
+            });
+        })
+
+        //return NativeProxy.send("fs", "readdir", path, callback);
+    }
+
+    function makedir(path, permission, callback) {
+        console.debug("makedir", path);
+        callback(ERR_CANT_READ);
+    }
+
+    function showOpenDialog(allowMultipleSelection,
+                            chooseDirectories,
+                            title,
+                            initialPath,
+                            fileTypes,
+                            callback) {
+        chrome.fileSystem.chooseEntry({type: 'openDirectory'}, function(entry){
+            if(entry) {
+                var entryId = chrome.fileSystem.retainEntry(entry);
+                entries.push(entryId);
+                saveEntryReference(entryId);
+                callback(brackets.fs.NO_ERROR, [entry.fullPath]);
+                /*entry.createReader().readEntries(function(files){
+                    callback(brackets.fs.NO_ERROR, files);
+                });*/
+            } else {
+                callback(brackets.fs.NO_ERROR, [])
+            }
+
+        });
+    }
+    function _statFile(entry, callback) {
+        statCache[entry.fullPath] = entry;
+        entry.file(function(file){
+            callback(brackets.fs.NO_ERROR, {
+                isFile: function() { return true },
+                isDirectory: function() { return false },
+                mtime: file.lastModifiedDate
+            })
+        });
+    }
+
+    function equalsIgnoreSlashes(path, otherPath) {
+        var indexOf = path.indexOf(otherPath);
+        return indexOf == 0 || indexOf == 1;
+    }
+
+    function stat(path, callback) {
+        console.debug("stat", path);
+        var resolved = false;
+
+        // This is a hack until I have a proper solution to determine when something is 'not found'.
+        var timer = setTimeout(function(){
+            callback(brackets.fs.ERR_NOT_FOUND)
+        }, 100);
+
+        var resolve = function() { clearTimeout(timer) }
+        getEntryReferences(function(entries){
+            entries.forEach(function (id, index) {
+                chrome.fileSystem.isRestorable(id, function () {
+                    chrome.fileSystem.restoreEntry(id, function (entry) {
+                        if (entry.isDirectory) {
+                            if (path == (entry.fullPath + '/')) {
+                                resolved = true;
+                                resolve();
+                                callback(brackets.fs.NO_ERROR, {
+                                    isFile: function () {
+                                        return false
+                                    },
+                                    isDirectory: function () {
+                                        return true
+                                    },
+                                    mtime: new Date()
+                                })
+                            } else {
+                                entry.createReader().readEntries(function (entries) {
+                                    entries.forEach(function (entry) {
+                                        if (!entry.isDirectory && entry.fullPath == path) {
+                                            resolved = true;
+                                            resolve();
+                                            _statFile(entry, callback);
+                                        }
+                                    })
+                                });
+                            }
+                        } else if (entry.fullPath == path) {
+                            resolved = true;
+                            resolve();
+                            _statFile(entry, callback);
+                        }
+                        if(index == entries.length - 1  && !resolved) {
+                            //callback(brackets.fs.ERR_NOT_FOUND);
+                        }
+                    });
+                });
+            });
+        });
+        return;
+        NativeProxy.send("fs", "stat", path, function (err, statData) {
+            if (statData && callback) {
+                statData.isFile = function () { return statData._isFile; };
+                statData.isDirectory = function () { return statData._isDirectory; };
+                statData.isBlockDevice = function () { return statData._isBlockDevice; };
+                statData.isCharacterDevice = function () { return statData._isCharacterDevice; };
+                statData.isFIFO = function () { return statData._isFIFO; };
+                statData.isSocket = function () { return statData._isSocket; };
+                statData.atime = new Date(statData.atime);
+                statData.mtime = new Date(statData.mtime);
+                statData.ctime = new Date(statData.ctime);
+            }
+            if (callback) {
+                callback(err, statData);
+            }
+        });
+    }
+
+    function readFile(path, encoding, callback) {
+        console.debug("readFile", path);
+        statCache[path].file(function(file){
+            var reader = new FileReader();
+            reader.readAsText(file, "utf-8");
+            reader.onload = function(ev) {
+                callback(brackets.fs.NO_ERROR, ev.target.result);
+            };
+        })
+        //return NativeProxy.send("fs", "readFile", path, encoding, callback);
+    }
+
+    function writeFile(path, data, encoding, callback) {
+        console.debug("writeFile", path);
+        var entry = statCache[path];
+        if(!entry)
+            callback(brackets.fs.ERR_NOT_FOUND);
+        else
+            writeText(data, entry, encoding, callback);
+
+    }
+
+    function writeText(data, entry, encoding, callback) {
+        entry.createWriter(function (writer) {
+            //writer.truncate(0);
+            writer.onerror = function(err) {
+                callback(err.code)
+            };
+            writer.onwriteend = function() {
+                callback(brackets.fs.NO_ERROR);
+            };
+
+            var blob = new Blob([data]);
+            var size = data.length;
+
+            writer.write(blob);
+
+        });
+    }
+
+    function chmod(path, mode, callback) {
+        console.debug("chmod", path);
+        return NativeProxy.send("fs", "chmod", path, mode, callback);
+    }
+
+    function unlink(path, callback) {
+        console.debug("unlink", path);
+        return NativeProxy.send("fs", "unlink", path, callback);
+    }
+
+    function cwd(callback) {
+        console.debug("cwd", path);
+        return NativeProxy.send("fs", "cwd", callback);
+    }
+
+    exports.NO_ERROR = NO_ERROR;
+    exports.ERR_UNKNOWN = ERR_UNKNOWN;
+    exports.ERR_INVALID_PARAMS = ERR_INVALID_PARAMS;
+    exports.ERR_NOT_FOUND = ERR_NOT_FOUND;
+    exports.ERR_CANT_READ = ERR_CANT_READ;
+    exports.ERR_UNSUPPORTED_ENCODING = ERR_UNSUPPORTED_ENCODING;
+    exports.ERR_CANT_WRITE = ERR_CANT_WRITE;
+    exports.ERR_OUT_OF_SPACE = ERR_OUT_OF_SPACE;
+    exports.ERR_NOT_FILE = ERR_NOT_FILE;
+    exports.ERR_NOT_DIRECTORY = ERR_NOT_DIRECTORY;
+
+    exports.readdir = readdir;
+    exports.makedir = makedir;
+    exports.stat = stat;
+    exports.showOpenDialog = showOpenDialog;
+    exports.readFile = readFile;
+    exports.writeFile = writeFile;
+    exports.chmod = chmod;
+    exports.unlink = unlink;
+    exports.cwd = cwd;
+});
