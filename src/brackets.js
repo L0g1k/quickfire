@@ -28,7 +28,8 @@
 require.config({
     paths: {
         "text"      : "thirdparty/text/text",
-        "i18n"      : "thirdparty/i18n/i18n"
+        "i18n"      : "thirdparty/i18n/i18n",
+        "LiveDevelopment/Inspector/Inspector" : "chrome/LiveDevelopment/Inspector/Inspector"
     },
     config : {
         "file/PlatformFileSystem" : {filesystem: "html5"},
