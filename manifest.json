@@ -10,9 +10,6 @@
         "background": {
             "scripts": [
                 "src/thirdparty/requirejs/require.js",
-                "src/chrome/lib/webserver.js",
-                "src/chrome/lib/web-server-simple.js",
-                "src/chrome/lib/syncFS.js",
                 "src/chrome/background.js"
             ]
         }

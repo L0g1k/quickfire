@@ -20,6 +20,12 @@ define(function (require, exports, module) {
 
     // Brackets will often stat a file, get it's path, then ask for it again right away through readFile.
     var statCache = {};
+
+    var virtualDirectories = [];
+
+    function addVirtualDirectoryListing() {
+
+    }
     function saveEntryReference(entryId) {
         var entries;
 
@@ -63,8 +69,6 @@ define(function (require, exports, module) {
                 });
             });
         })
-
-        //return NativeProxy.send("fs", "readdir", path, callback);
     }
 
     function makedir(path, permission, callback) {
@@ -93,6 +97,16 @@ define(function (require, exports, module) {
 
         });
     }
+
+    function getFileW3C(path, options, callback, err) {
+        var file = statCache[path];
+        if(file) {
+            callback(file);
+        } else {
+            err(brackets.fs.ERR_NOT_FOUND);
+        }
+    }
+
     function _statFile(entry, callback) {
         statCache[entry.fullPath] = entry;
         entry.file(function(file){
@@ -102,11 +116,6 @@ define(function (require, exports, module) {
                 mtime: file.lastModifiedDate
             })
         });
-    }
-
-    function equalsIgnoreSlashes(path, otherPath) {
-        var indexOf = path.indexOf(otherPath);
-        return indexOf == 0 || indexOf == 1;
     }
 
     function stat(path, callback) {
@@ -124,7 +133,7 @@ define(function (require, exports, module) {
                 chrome.fileSystem.isRestorable(id, function () {
                     chrome.fileSystem.restoreEntry(id, function (entry) {
                         if (entry.isDirectory) {
-                            if (path == (entry.fullPath + '/')) {
+                            if (path == entry.fullPath || path == (entry.fullPath + '/')) {
                                 resolved = true;
                                 resolve();
                                 callback(brackets.fs.NO_ERROR, {
@@ -159,35 +168,38 @@ define(function (require, exports, module) {
                 });
             });
         });
-        return;
-        NativeProxy.send("fs", "stat", path, function (err, statData) {
-            if (statData && callback) {
-                statData.isFile = function () { return statData._isFile; };
-                statData.isDirectory = function () { return statData._isDirectory; };
-                statData.isBlockDevice = function () { return statData._isBlockDevice; };
-                statData.isCharacterDevice = function () { return statData._isCharacterDevice; };
-                statData.isFIFO = function () { return statData._isFIFO; };
-                statData.isSocket = function () { return statData._isSocket; };
-                statData.atime = new Date(statData.atime);
-                statData.mtime = new Date(statData.mtime);
-                statData.ctime = new Date(statData.ctime);
-            }
-            if (callback) {
-                callback(err, statData);
-            }
-        });
     }
 
+    /**
+     * Reads a file which we've already seen. If we haven't seen it, then try to load it via http request
+     * to an application file (ie. a file which is part of the packaged app source)
+     *
+     * @param path
+     * @param encoding
+     * @param callback
+     */
     function readFile(path, encoding, callback) {
         console.debug("readFile", path);
-        statCache[path].file(function(file){
-            var reader = new FileReader();
-            reader.readAsText(file, "utf-8");
-            reader.onload = function(ev) {
-                callback(brackets.fs.NO_ERROR, ev.target.result);
-            };
-        })
+        var cachedFile = statCache[path];
+        if(cachedFile)
+            cachedFile.file(function(file){
+                var reader = new FileReader();
+                reader.readAsText(file, "utf-8");
+                reader.onload = function(ev) {
+                    callback(brackets.fs.NO_ERROR, ev.target.result);
+                };
+            });
+        else
+            requestApplicationFile(path, encoding, callback);
+
+
         //return NativeProxy.send("fs", "readFile", path, encoding, callback);
+    }
+
+    function requestApplicationFile(path, encoding, callback) {
+        $.get(path)
+            .done(function(data) { callback(brackets.fs.NO_ERROR, data); })
+            .fail(function() { callback(brackets.fs.ERR_NOT_FOUND) });
     }
 
     function writeFile(path, data, encoding, callback) {
@@ -244,6 +256,7 @@ define(function (require, exports, module) {
     exports.ERR_NOT_FILE = ERR_NOT_FILE;
     exports.ERR_NOT_DIRECTORY = ERR_NOT_DIRECTORY;
 
+    exports.getFileW3C = getFileW3C;
     exports.readdir = readdir;
     exports.makedir = makedir;
     exports.stat = stat;

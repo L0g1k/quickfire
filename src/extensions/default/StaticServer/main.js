@@ -36,7 +36,8 @@ define(function (require, exports, module) {
         BaseServer           = brackets.getModule("LiveDevelopment/Servers/BaseServer").BaseServer,
         NodeConnection       = brackets.getModule("utils/NodeConnection"),
         ProjectManager       = brackets.getModule("project/ProjectManager"),
-        StaticServer         = require("StaticServer").StaticServer;
+        ChromeWebServer      = require("ChromeWebServer").ChromeWebServer,
+        StaticServer         = require("StaticChromeServer").StaticChromeServer;
 
     /**
      * @const
@@ -59,7 +60,7 @@ define(function (require, exports, module) {
      * @type {NodeConnection}
      */
     var _nodeConnection = new NodeConnection();
-    
+    var _chromeWebServer = new ChromeWebServer("127.0.0.1", 8081, brackets.fs);
     /**
      * @private
      * @return {StaticServerProvider} The singleton StaticServerProvider initialized
@@ -67,7 +68,7 @@ define(function (require, exports, module) {
      */
     function _createStaticServer() {
         var config = {
-            nodeConnection  : _nodeConnection,
+            chromeWebServer  : _chromeWebServer,
             pathResolver    : ProjectManager.makeProjectRelativeIfPossible,
             root            : ProjectManager.getProjectRoot().fullPath
         };
@@ -88,35 +89,13 @@ define(function (require, exports, module) {
     }
     
     function initExtension() {
-        // Start up the node connection, which is held in the
-        // _nodeConnectionDeferred module variable. (Use 
-        // _nodeConnectionDeferred.done() to access it.
-        var connectionTimeout = setTimeout(function () {
-            console.error("[StaticServer] Timed out while trying to connect to node");
-            _nodeConnectionDeferred.reject();
-        }, NODE_CONNECTION_TIMEOUT);
-        
-        _nodeConnection.connect(true).then(function () {
-            _nodeConnection.loadDomains(
-                [ExtensionUtils.getModulePath(module, "node/StaticServerDomain")],
-                true
-            ).then(
-                function () {
-                    clearTimeout(connectionTimeout);
 
-                    // Register as a Live Development server provider
-                    LiveDevServerManager.registerServer({ create: _createStaticServer }, 5);
+        // Register as a Live Development server provider
+        LiveDevServerManager.registerServer({ create: _createStaticServer }, 5);
 
-                    _nodeConnectionDeferred.resolveWith(null, [_nodeConnection]);
-                },
-                function () { // Failed to connect
-                    console.error("[StaticServer] Failed to connect to node", arguments);
-                    _nodeConnectionDeferred.reject();
-                }
-            );
-        });
 
-        return _nodeConnectionDeferred.promise();
+
+        return $.Deferred().resolve().promise();
     }
 
     exports.initExtension = initExtension;

@@ -29,7 +29,8 @@ require.config({
     paths: {
         "text"      : "thirdparty/text/text",
         "i18n"      : "thirdparty/i18n/i18n",
-        "LiveDevelopment/Inspector/Inspector" : "chrome/LiveDevelopment/Inspector/Inspector"
+        "LiveDevelopment/Inspector/Inspector" : "chrome/LiveDevelopment/Inspector/Inspector",
+        "utils/ExtensionLoader" : "chrome/utils/ExtensionLoader"
     },
     config : {
         "file/PlatformFileSystem" : {filesystem: "html5"},
@@ -117,7 +118,7 @@ define(function (require, exports, module) {
     require("search/FindReplace");
     require("extensibility/InstallExtensionDialog");
     require("extensibility/ExtensionManagerDialog");
-    
+
     PerfUtils.addMeasurement("brackets module dependencies resolved");
 
     // Local variables
