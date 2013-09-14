@@ -4,6 +4,26 @@
 define(function (require, exports, module) {
     "use strict";
 
+    var AppInit = require("utils/AppInit");
+    var fs = require("chrome/fs");
+
+    AppInit.appReady(function () {
+
+        var interstitial = '__launch__.html';
+        fs.getFileW3C(interstitial, {create: false}, function(file) {
+            fs.registerVirtualFileListing(file);
+            console.debug("Success: Interstitial page found");
+        }, function(err){
+            if(err == brackets.fs.ERR_NOT_FOUND) {
+                console.log("Creating interstitial page");
+                $.get('LiveDevelopment/launch.html').then(function(data){
+                    fs.addVirtualFileListing(interstitial, data);
+                });
+            }
+        })
+
+    });
+
     function quit() {
         // unsupported
     }

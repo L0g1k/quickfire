@@ -23,7 +23,8 @@
         "fileSystem",
         "fileSystem.retainEntries",
         "fileSystem.write",
-        "fileSystem.directory"
+        "fileSystem.directory",
+        "unlimitedStorage"
     ],
     "offline_enabled": true
 
