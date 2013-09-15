@@ -6,7 +6,7 @@ define(function (require, exports, module) {
 
     // jQuery exports object for events
     var $exports = $(exports),
-        extensionId = "holicmlmjaffgaaccnbnecmcdjinejle",
+        extensionId = "gbipnkadpcadnnelfkbgoenoojgabhfa",
         _socket = chrome.runtime.connect(extensionId, { name: 'RDPBridgeServer'}), // chrome extension 'socket'
         _messageId = 1, // id used for remote method calls, auto-incrementing
         _messageCallbacks = {}; // {id -> function} for remote method calls

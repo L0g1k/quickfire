@@ -359,6 +359,27 @@ define(function (require, exports, module) {
         return deferred.promise();
     }
 
+    function any(items, beginProcessItem) {
+        var deferred = $.Deferred();
+        var resolved = false;
+        var total = items.length;
+        var processed = 0;
+        items.forEach(function(item){
+            if(!resolved)
+                beginProcessItem(item).then(function(result){
+                    deferred.resolve(result);
+                }).fail(function(err){
+                        if(total == processed)
+                            deferred.reject(err);
+                }).always(function(){
+                     processed++;
+                    })
+
+
+        })
+        return deferred.promise();
+    }
+
     /**
      * @constructor
      * Creates a queue of async operations that will be executed sequentially. Operations can be added to the
@@ -427,6 +448,7 @@ define(function (require, exports, module) {
     exports.doInParallel_aggregateErrors = doInParallel_aggregateErrors;
     exports.withTimeout    = withTimeout;
     exports.chain          = chain;
+    exports.any            = any;
     exports.PromiseQueue   = PromiseQueue;
     exports.ERROR_TIMEOUT  = ERROR_TIMEOUT;
 });

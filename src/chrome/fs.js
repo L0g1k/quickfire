@@ -1,8 +1,13 @@
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
-/*global define */
+/*global chrome, define */
 
+chrome.storage.local.get(null, function(data){
+    chromeStorageObj = data || {};
+});
 define(function (require, exports, module) {
     "use strict";
+
+    var Async = require("utils/Async");
 
     var NO_ERROR = 0;
     var ERR_UNKNOWN = 1;
@@ -16,7 +21,7 @@ define(function (require, exports, module) {
     var ERR_NOT_DIRECTORY = 9;
 
     var entries = [];
-    var ENTRY_KEY = 'entries';
+    var ENTRY_KEY = 'com.quickfire.directories';
 
     // Brackets will often stat a file, get it's path, then ask for it again right away through readFile.
     var statCache = {};
@@ -57,45 +62,54 @@ define(function (require, exports, module) {
         var entries;
 
         try {
-            chrome.storage.local.get(ENTRY_KEY, function(entries) {
-                if(Object.keys(entries).length === 0) {
-                    entries = { entries: [] };
-                }
-                entries.entries.push(entryId);
-                var storage = {};
-                storage[ENTRY_KEY] = entries.entries;
-                chrome.storage.local.set(storage);
-            });
+            var existing = chromeStorageObj[ENTRY_KEY] || [];
+            existing.push(entryId);
+            chromeStorageObj[ENTRY_KEY] = existing;
+            chrome.storage.local.set(chromeStorageObj, callback);
+
         } catch (e) {
             console.error('Entry storage not found', e.message);
         }
     }
 
-    function getEntryReferences(callback) {
-        chrome.storage.local.get(ENTRY_KEY, function(entries) {
-            callback(Object.keys(entries).length ? entries.entries : []);
-        });
+    function getEntryReferences() {
+        return chromeStorageObj[ENTRY_KEY] || [];
     }
 
     function readdir(path, callback) {
-        console.debug("readdir", path);
-        getEntryReferences(function(entries){
-            entries.forEach(function(id){
-                chrome.fileSystem.isRestorable(id, function(){
-                    chrome.fileSystem.restoreEntry(id, function(entry){
-                        if(entry.isDirectory && path == (entry.fullPath + '/')) {
-                            entry.createReader().readEntries(function(entries){
-                                callback(brackets.fs.NO_ERROR, entries.map(function(entry){
-                                    return entry.name;
-                                }));
-                            });
-                        } else {
-                            callback(brackets.fs.ERR_NOT_DIRECTORY);
-                        }
+        var entries = getEntryReferences();
+        Async.any(entries, _findPathInDirectory.bind(this, path)).then(function (entry) {
+            if (entry.isDirectory)
+                entry.createReader().readEntries(function(entries){
+                    var map = entries.map(function (entry) {
+                        return entry.name;
                     });
+                    callback(brackets.fs.NO_ERROR, map);
+                });
+            else
+                callback(brackets.fs.ERR_NOT_FOUND);
+        }).fail(function () {
+                callback(brackets.fs.ERR_NOT_FOUND);
+            });
+    }
+    function readdir_(path, callback) {
+        console.debug("readdir", path);
+        var entries = getEntryReferences();
+        entries.forEach(function(id){
+            chrome.fileSystem.isRestorable(id, function(){
+                chrome.fileSystem.restoreEntry(id, function(entry){
+                    if(entry.isDirectory && path == (entry.fullPath + '/')) {
+                        entry.createReader().readEntries(function(entries){
+                            var map = entries.map(function (entry) {
+                                return entry.name;
+                            });
+                            callback(brackets.fs.NO_ERROR, map);
+                        });
+                    }
                 });
             });
-        })
+        });
+
     }
 
     function makedir(path, permission, callback) {
@@ -154,7 +168,65 @@ define(function (require, exports, module) {
         });
     }
 
+    function _statDirectory(entry, callback) {
+        callback(brackets.fs.NO_ERROR, {
+            isFile: function () {
+                return false
+            },
+            isDirectory: function () {
+                return true
+            },
+            mtime: new Date()
+        });
+    }
+
     function stat(path, callback) {
+        var entries = getEntryReferences();
+        Async.any(entries, _findPathInDirectory.bind(this, path)).then(function (entry) {
+            if (entry.isDirectory)
+                _statDirectory(entry, callback)
+            else
+                _statFile(entry, callback)
+        }).fail(function () {
+                callback(brackets.fs.ERR_NOT_FOUND)
+        });
+    }
+
+    function _findPathInDirectory(path, id) {
+        var deferred = $.Deferred();
+        chrome.fileSystem.isRestorable(id, function () {
+            chrome.fileSystem.restoreEntry(id, function (entry) {
+                if (entry.isDirectory) {
+                    if(path.indexOf(entry.fullPath) == -1) {
+                        deferred.reject();
+                    } else {
+                        if (path == entry.fullPath || path == (entry.fullPath + '/')) {
+                            deferred.resolve(entry);
+                        } else {
+                            entry.getFile(path, {}, function(file){
+                                deferred.resolve(file);
+                            }, function(err){
+                                if(err.code == FileError.TYPE_MISMATCH_ERR) {
+                                    entry.getDirectory(path, {}, function(directory){
+                                        deferred.resolve(directory);
+                                    }, function(err){
+                                        deferred.reject(err);
+                                    });
+                                } else
+                                    deferred.reject(err);
+                            });
+                        }
+                    }
+
+                } else {
+                    deferred.reject();
+                }
+            });
+        });
+        return deferred.promise();
+    }
+
+    function stat2(path, callback) {
         console.debug("stat", path);
         var resolved = false;
 
@@ -164,7 +236,7 @@ define(function (require, exports, module) {
         }, 100);
 
         var resolve = function() { clearTimeout(timer) }
-        getEntryReferences(function(entries){
+        var entries = getEntryReferences();
             entries.forEach(function (id, index) {
                 chrome.fileSystem.isRestorable(id, function () {
                     chrome.fileSystem.restoreEntry(id, function (entry) {
@@ -203,7 +275,7 @@ define(function (require, exports, module) {
                     });
                 });
             });
-        });
+
     }
 
     /**
