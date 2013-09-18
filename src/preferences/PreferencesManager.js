@@ -36,7 +36,7 @@ define(function (require, exports, module) {
         FileUtils         = require("file/FileUtils"),
         ExtensionLoader   = require("utils/ExtensionLoader"),
         CollectionUtils   = require("utils/CollectionUtils"),
-        ChromeStorage = require("preferences/ChromeStorage");
+        ChromeStorage     = require("preferences/ChromeStorage");
 
     /**
      * The local storage ID

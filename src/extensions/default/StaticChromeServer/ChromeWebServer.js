@@ -12,9 +12,11 @@ function WebServerSimple(host, port, fs) {
     var self = this;
     if(!fs) console.error('Could not find file system; web server can not start');
     this.fs = fs;
+    this._connected = false;
 
     chrome.socket.create("tcp", {}, function(_socketInfo) {
         socketInfo = _socketInfo;
+        this._connected = true;
         chrome.socket.listen(socketInfo.socketId, host, parseInt(port), 50, function(result) {
             console.log("LISTENING:", result);
             chrome.socket.accept(socketInfo.socketId, function(acceptInfo){
@@ -26,6 +28,10 @@ function WebServerSimple(host, port, fs) {
 
 WebServerSimple.prototype.onAccept = function(acceptInfo) {
     this.readFromSocket(acceptInfo.socketId);
+}
+
+WebServerSimple.prototype.connected = function() {
+    return this._connected;
 }
 
 WebServerSimple.prototype.readFromSocket = function(socketId) {

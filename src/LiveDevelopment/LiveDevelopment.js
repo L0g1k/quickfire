@@ -914,7 +914,7 @@ define(function LiveDevelopment(require, exports, module) {
                 dialogPromise.done(function (id) {
                     if (id === Dialogs.DIALOG_BTN_OK) {
                         // User has chosen to reload Chrome, quit the running instance
-                        _setStatus(STATUS_INACTIVE);
+                        /*_setStatus(STATUS_INACTIVE);
                         NativeApp.closeLiveBrowser()
                             .done(function () {
                                 browserStarted = false;
@@ -928,7 +928,8 @@ define(function LiveDevelopment(require, exports, module) {
                                 _setStatus(STATUS_ERROR);
                                 browserStarted = false;
                                 _openDeferred.reject("CLOSE_LIVE_BROWSER");
-                            });
+                            });*/
+                        NativeApp.openURLInDefaultBrowser(brackets.chrome.extensionInstallURL)
                     } else {
                         _openDeferred.reject("CANCEL");
                     }

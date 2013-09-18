@@ -60,16 +60,16 @@ define(function (require, exports, module) {
      * @return {boolean} true for yes, otherwise false.
      */
     StaticServer.prototype.canServe = function (localPath) {
-        if (!this._nodeConnection.connected()) {
+        if (!this.chromeWebServer.connected()) {
             return false;
         }
         
         // If we can't transform the local path to a project relative path,
         // the path cannot be served
-        if (localPath === this._pathResolver(localPath)) {
+        /*if (localPath === this._pathResolver(localPath)) {
             return false;
         }
-
+*/
         // Url ending in "/" implies default file, which is usually index.html.
         // Return true to indicate that we can serve it.
         if (localPath.match(/\/$/)) {

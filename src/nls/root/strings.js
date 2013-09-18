@@ -79,7 +79,7 @@ define({
     
     "LIVE_DEVELOPMENT_ERROR_TITLE"      : "Live Preview Error",
     "LIVE_DEVELOPMENT_RELAUNCH_TITLE"   : "Connecting to Browser",
-    "LIVE_DEVELOPMENT_ERROR_MESSAGE"    : "In order for Live Preview to connect, Chrome needs to be relaunched with remote debugging enabled.<br /><br />Would you like to relaunch Chrome and enable remote debugging?",
+    "LIVE_DEVELOPMENT_ERROR_MESSAGE"    : "In order for Live Preview to connect, you need to install our free Chrome extension.<br /><br />Would you like to install it?",
     "LIVE_DEV_LOADING_ERROR_MESSAGE"    : "Unable to load Live Development page",
     "LIVE_DEV_NEED_HTML_MESSAGE"        : "Open an HTML file in order to launch live preview.",
     "LIVE_DEV_NEED_BASEURL_MESSAGE"     : "To launch live preview with a server-side file, you need to specify a Base URL for this project.",
@@ -307,7 +307,7 @@ define({
     "RELOAD_FROM_DISK"                     : "Reload from Disk",
     "KEEP_CHANGES_IN_EDITOR"               : "Keep Changes in Editor",
     "CLOSE_DONT_SAVE"                      : "Close (Don't Save)",
-    "RELAUNCH_CHROME"                      : "Relaunch Chrome",
+    "RELAUNCH_CHROME"                      : "Visit the Chrome Store",
     "ABOUT"                                : "About",
     "CLOSE"                                : "Close",
     "ABOUT_TEXT_LINE1"                     : "sprint {VERSION_MINOR} {BUILD_TYPE} {VERSION}",

@@ -7,16 +7,68 @@ define(function (require, exports, module) {
     // jQuery exports object for events
     var $exports = $(exports),
         extensionId = "gbipnkadpcadnnelfkbgoenoojgabhfa",
+        _connectDeferred, // The deferred connect
         _socket = chrome.runtime.connect(extensionId, { name: 'RDPBridgeServer'}), // chrome extension 'socket'
         _messageId = 1, // id used for remote method calls, auto-incrementing
         _messageCallbacks = {}; // {id -> function} for remote method calls
 
+    var NativeApp            = require("utils/NativeApp");
+
+        function initSocket() {
+        _socket.onMessage.addListener(_onMessage);
+        _socket.onDisconnect.addListener(_onDisconnect);
+    }
     /** Send a message to the remote debugger
      * All passed arguments after the signature are passed on as parameters.
      * If the last argument is a function, it is used as the callback function.
      * @param {string} remote method
      * @param {object} the method signature
      */
+
+    function _onDisconnect() {
+        _socket = undefined;
+        $exports.triggerHandler("disconnect");
+    }
+    /** Received message from the WebSocket
+     * A message can be one of three things:
+     *   1. an error -> report it
+     *   2. the response to a previous command -> run the stored callback
+     *   3. an event -> trigger an event handler method
+     * @param {object} message
+     */
+    function _onMessage(message) {
+        var response = JSON.parse(message.data);
+        $exports.triggerHandler("message", [response]);
+        if (response.error) {
+            $exports.triggerHandler("error", [response.error]);
+        } else if (response.result) {
+            if (_messageCallbacks[response.id]) {
+                _messageCallbacks[response.id](response.result);
+                delete _messageCallbacks[response.id];
+            }
+        } else {
+            var domainAndMethod = response.method.split(".");
+            var domain = domainAndMethod[0];
+            var method = domainAndMethod[1];
+            $(exports[domain]).triggerHandler(method, response.params);
+        }
+    }
+
+    function checkExtension() {
+        var deferred = $.Deferred();
+        if(_socket) {
+            try {
+                _socket.postMessage({});
+                deferred.resolve();
+            } catch (e) {
+                deferred.reject();
+            }
+        } else {
+            deferred.reject();
+        }
+        return deferred.promise();
+    }
+
     function _send(method, signature, varargs) {
         if (!_socket) {
             // FUTURE: Our current implementation closes and re-opens an inspector connection whenever
@@ -53,7 +105,10 @@ define(function (require, exports, module) {
                 params[signature[i].name] = args[i];
             }
         }
-        _socket.send(JSON.stringify({ method: method, id: id, params: params }));
+
+        var message = { method: method, id: id, params: params };
+        console.debug(message);
+        _socket.postMessage(message);
 
         return promise;
     }
@@ -82,30 +137,65 @@ define(function (require, exports, module) {
         debug("Disconnecting");
     }
 
-    function connect(socketURL) {
-        debug("Connecting to socket URL " + socketURL);
-    }
-
     /**
      * Brackets would like to request a connection to each and every URL individually. That's because the underlying
      * remote debugging server in Chrome works on that model. Here, we are abandoning the remote debugging server completely,
-     * and so we are free to also abandon the model of managing one connection for every page. It's more appropriate for
+     * and so we are free to also abandon the aforementioned technique. It's more appropriate for
      * us to simply connect once to our remote debugging extension (the chrome extension that acts as a stand-in) and
      * be done with it. So as to interop nicely with Brackets, let's just tell it we're connected if everything looks ok.
      *
      * @param url
      * @returns {*}
      */
+    function connect(socketURL) {
+        debug("Connecting to socket URL " + socketURL);
+
+    }
+
+
+    /**
+     * We have to serve the interstitial page manually through the web server. If brackets asks for
+     * that page, we transform the URL so it works.
+     *
+     * @param url
+     * @returns {*}
+     */
     function connectToURL(url) {
         debug("Connection to " + url + " requested");
-        var deferred = $.Deferred();
-        deferred.resolve();
+
+        if (_connectDeferred) {
+            // reject an existing connection attempt
+            _connectDeferred.reject("CANCEL");
+        }
+        var deferred = new $.Deferred();
+        _connectDeferred = deferred;
+        var promise = checkExtension();
+        promise.done(function () {
+            deferred.resolve();
+            _connectDeferred = null;
+            $exports.triggerHandler("connect");
+            initSocket();
+            NativeApp.openLiveBrowser(url);
+        });
+        promise.fail(function onFail(err) {
+            deferred.reject(err);
+        });
         return deferred.promise();
+
     }
 
     function connected() {
         debug("Returning connection status");
-
+        if(_socket) {
+            try {
+                _socket.postMessage({});
+                return true;
+            } catch (e) {
+                return false;
+            }
+        } else {
+            return false;
+        }
     }
     
     function debug(message) {

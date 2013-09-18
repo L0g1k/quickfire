@@ -4,12 +4,12 @@
 define(function (require, exports, module) {
     "use strict";
 
-    var AppInit = require("utils/AppInit");
-    var fs = require("chrome/fs");
+    var AppInit = require("utils/AppInit"),
+    fs = require("chrome/fs");
 
-    AppInit.appReady(function () {
 
-        var interstitial = '__launch__.html';
+        AppInit.appReady(function () {
+        var interstitial = brackets.chrome.interstitial;
         fs.getFileW3C(interstitial, {create: false}, function(file) {
             fs.registerVirtualFileListing(file);
             console.debug("Success: Interstitial page found");
@@ -41,9 +41,19 @@ define(function (require, exports, module) {
     }
 
     function openLiveBrowser(url, enableRemoteDebugging, callback) {
-        if (callback) {
-            callback();
-        }
+        require(["preferences/PreferencesManager"], function(PreferencesManager){
+            var config = PreferencesManager.getPreferenceStorage('com.brackets.preferences.global').getValue('chrome-web-server-port');
+            if(url.indexOf('src/LiveDevelopment/launch.html') != -1) {
+                url = brackets.chrome.interstitial;
+            }
+
+            window.open("http://localhost:" + config.port + "/" + url);
+            if (callback) {
+                callback();
+            }
+        })
+
+
     }
 
     function closeLiveBrowser(callback) {
@@ -52,11 +62,8 @@ define(function (require, exports, module) {
         }
     }
 
-    function openURLInDefaultBrowser(callback, url) {
-        window.open("url", "_blank");
-        if (callback) {
-            callback();
-        }
+    function openURLInDefaultBrowser(url) {
+            window.open(url, "_blank");
     }
 
     function showExtensionsFolder() {

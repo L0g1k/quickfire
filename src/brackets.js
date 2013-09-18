@@ -33,7 +33,6 @@ require.config({
         "utils/ExtensionLoader" : "chrome/utils/ExtensionLoader"
     },
     config : {
-        "file/PlatformFileSystem" : {filesystem: "html5"},
         "preferences/PreferencesManager" : {persistentStorage : "chrome"}
     },
     // Use custom brackets property until CEF sets the correct navigator.language

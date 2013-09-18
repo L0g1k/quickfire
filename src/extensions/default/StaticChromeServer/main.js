@@ -36,9 +36,12 @@ define(function (require, exports, module) {
         BaseServer           = brackets.getModule("LiveDevelopment/Servers/BaseServer").BaseServer,
         NodeConnection       = brackets.getModule("utils/NodeConnection"),
         ProjectManager       = brackets.getModule("project/ProjectManager"),
+        PreferencesManager    = brackets.getModule("preferences/PreferencesManager"),
+
         ChromeWebServer      = require("ChromeWebServer").ChromeWebServer,
         StaticServer         = require("StaticChromeServer").StaticChromeServer;
 
+    //var config               = require("text")
     /**
      * @const
      * Amount of time to wait before automatically rejecting the connection
@@ -54,13 +57,26 @@ define(function (require, exports, module) {
      * we are unable to connect to Node.
      */
     var _nodeConnectionDeferred = new $.Deferred();
-    
+
+    var key = 'chrome-web-server-port';
+
+    var defaults = {
+        port: 8081
+    }
+    var preferenceStorage = PreferencesManager.getPreferenceStorage('com.brackets.preferences.global');
+    var config = preferenceStorage.getValue(key);
+    if(!config) {
+        preferenceStorage.setValue(key, defaults);
+        config = defaults;
+    }
+   // var config = PreferenceStorage.getItem('chrome-web-server-port');
+
     /**
      * @private
      * @type {NodeConnection}
      */
     var _nodeConnection = new NodeConnection();
-    var _chromeWebServer = new ChromeWebServer("127.0.0.1", 8081, brackets.fs);
+    var _chromeWebServer = new ChromeWebServer("127.0.0.1", config.port, brackets.fs);
     /**
      * @private
      * @return {StaticServerProvider} The singleton StaticServerProvider initialized
@@ -98,8 +114,12 @@ define(function (require, exports, module) {
         return $.Deferred().resolve().promise();
     }
 
-    exports.initExtension = initExtension;
+    function getConfig() {
+        return preferenceStorage.getValue(key);
+    }
 
+    exports.initExtension = initExtension;
+    exports.getConfig = getConfig;
     // For unit tests only
     exports._getStaticServerProvider = _createStaticServer;
     exports._getNodeConnectionDeferred = _getNodeConnectionDeferred;

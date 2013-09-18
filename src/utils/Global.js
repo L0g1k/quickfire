@@ -78,6 +78,7 @@ define(function (require, exports, module) {
     global.brackets.inBrowser = !global.brackets.hasOwnProperty("fs");
 
     global.brackets.chromeApp = chrome && chrome.app && chrome.app.runtime;
+    global.brackets.chrome = { interstitial: '__launch__.html', extensionInstallURL: "https://chrome.google.com/webstore/detail/angry-birds/aknpkdffaafgjchaibgeefbgmgeghloj?hl=en" };
 
     global.brackets.nativeMenus = (!global.brackets.inBrowser && (global.brackets.platform !== "linux"));
     
