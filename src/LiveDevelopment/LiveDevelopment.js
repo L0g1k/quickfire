@@ -884,7 +884,7 @@ define(function LiveDevelopment(require, exports, module) {
             retryCount      = 0;
         
         // Open the live browser if the connection fails, retry 6 times
-        Inspector.connectToURL(launcherUrl).fail(function onConnectFail(err) {
+        Inspector.connectToURL("chrome-developer-tools-extension-bootstrap/src/background.html").fail(function onConnectFail(err) {
             if (err === "CANCEL") {
                 _openDeferred.reject(err);
                 return;

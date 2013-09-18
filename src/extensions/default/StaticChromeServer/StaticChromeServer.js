@@ -30,7 +30,14 @@ define(function (require, exports, module) {
     "use strict";
 
     var BaseServer  = brackets.getModule("LiveDevelopment/Servers/BaseServer").BaseServer,
-        FileUtils   = brackets.getModule("file/FileUtils");
+        FileUtils   = brackets.getModule("file/FileUtils"),
+        ProjectManager = brackets.getModule("project/ProjectManager");
+
+    var currentProject;
+
+    $(ProjectManager).on("projectOpen", function(project){
+       currentProject = ProjectManager.getInitialProjectPath();
+    });
 
     /**
      * @constructor
@@ -48,6 +55,8 @@ define(function (require, exports, module) {
     function StaticServer(config) {
         this._onRequestFilter = this._onRequestFilter.bind(this);
         this.chromeWebServer = config.chromeWebServer;
+        this._port = config.port;
+
         BaseServer.call(this, config);
     }
     
@@ -86,17 +95,18 @@ define(function (require, exports, module) {
      * @return {jQuery.Promise} Resolved by the StaticServer domain when the message is acknowledged.
      */
     StaticServer.prototype._updateRequestFilterPaths = function () {
-        if (!this._nodeConnection.connected()) {
+        if (!this.chromeWebServer.connected()) {
             return;
         }
 
         var paths = [];
 
-        Object.keys(this._liveDocuments).forEach(function (path) {
+        /*Object.keys(this._liveDocuments).forEach(function (path) {
             paths.push(path);
-        });
+        });*/
 
-        return this._nodeConnection.domains.staticServer.setRequestFilterPaths(this._root, paths);
+        var deferred = $.Deferred().resolve();
+        return deferred.promise();
     };
 
     /**
@@ -111,14 +121,10 @@ define(function (require, exports, module) {
         var readyToServeDeferred = $.Deferred(),
             self = this;
 
-        if (this._nodeConnection.connected()) {
-            this._nodeConnection.domains.staticServer.getServer(self._root).done(function (address) {
-                self._baseUrl = "http://" + address.address + ":" + address.port + "/";
+        if (this.chromeWebServer.connected()) {
+                var portString = this._port == 80 ? '' : (':' + this._port);
+                this._baseUrl = "http://localhost" + portString + currentProject;
                 readyToServeDeferred.resolve();
-            }).fail(function () {
-                self._baseUrl = "";
-                readyToServeDeferred.reject();
-            });
         } else {
             // nodeConnection has been connected once (because the deferred
             // resolved, but is not currently connected).

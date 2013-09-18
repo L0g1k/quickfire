@@ -83,10 +83,12 @@ define(function (require, exports, module) {
      * on app ready.
      */
     function _createStaticServer() {
+        var data = preferenceStorage.getValue(key) || defaults;
         var config = {
             chromeWebServer  : _chromeWebServer,
             pathResolver    : ProjectManager.makeProjectRelativeIfPossible,
-            root            : ProjectManager.getProjectRoot().fullPath
+            root            : ProjectManager.getProjectRoot().fullPath,
+            port : data.port
         };
         
         return new StaticServer(config);

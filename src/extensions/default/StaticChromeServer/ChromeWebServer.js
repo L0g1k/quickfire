@@ -16,9 +16,9 @@ function WebServerSimple(host, port, fs) {
 
     chrome.socket.create("tcp", {}, function(_socketInfo) {
         socketInfo = _socketInfo;
-        this._connected = true;
+        self._connected = true;
         chrome.socket.listen(socketInfo.socketId, host, parseInt(port), 50, function(result) {
-            console.log("LISTENING:", result);
+            //console.log("LISTENING:", result);
             chrome.socket.accept(socketInfo.socketId, function(acceptInfo){
                 self.onAccept(acceptInfo);
             });
@@ -38,10 +38,10 @@ WebServerSimple.prototype.readFromSocket = function(socketId) {
     //  Read in the data
     var self = this;
     chrome.socket.read(socketId, function(readInfo) {
-        console.log("READ", readInfo);
+        //console.log("READ", readInfo);
         // Parse the request.
         var data = arrayBufferToString(readInfo.data);
-        console.info("Started request processing ", data);
+        //console.info("Started request processing ", data);
         if(data.indexOf("GET ") == 0) {
             var keepAlive = false;
             if (data.indexOf("Connection: keep-alive") != -1) {
@@ -60,7 +60,7 @@ WebServerSimple.prototype.readFromSocket = function(socketId) {
             self.fs.getFileW3C(decodeURIComponent(uri), { create: false }, function(file){
 
                 file.file(function(theFile){
-                    console.log("GET 200 " + uri);
+                   // console.log("GET 200 " + uri);
                     self.write200Response(socketId, theFile, false);
                 });
 
@@ -81,18 +81,18 @@ WebServerSimple.prototype.readFromSocket = function(socketId) {
 WebServerSimple.prototype.writeErrorResponse = function(socketId, errorCode, keepAlive) {
     var self = this;
     var file = { size: 0 };
-    console.info("writeErrorResponse:: begin... ");
-    console.info("writeErrorResponse:: file = " + file);
+    //console.info("writeErrorResponse:: begin... ");
+    //console.info("writeErrorResponse:: file = " + file);
     var contentType = "text/plain"; //(file.type === "") ? "text/plain" : file.type;
     var contentLength = file.size;
     var header = stringToUint8Array("HTTP/1.0 " + errorCode + " Not Found\nContent-length: " + file.size + "\nContent-type:" + contentType + ( keepAlive ? "\nConnection: keep-alive" : "") + "\n\n");
-    console.info("writeErrorResponse:: Done setting header...");
+   // console.info("writeErrorResponse:: Done setting header...");
     var outputBuffer = new ArrayBuffer(header.byteLength + file.size);
     var view = new Uint8Array(outputBuffer)
     view.set(header, 0);
-    console.info("writeErrorResponse:: Done setting view...");
+   // console.info("writeErrorResponse:: Done setting view...");
     chrome.socket.write(socketId, outputBuffer, function(writeInfo) {
-        console.log("WRITE", writeInfo);
+        //console.log("WRITE", writeInfo);
         if (keepAlive) {
             self.readFromSocket(socketId);
         } else {
@@ -102,9 +102,9 @@ WebServerSimple.prototype.writeErrorResponse = function(socketId, errorCode, kee
             });
         }
     });
-    console.info("writeErrorResponse::filereader:: end onload...");
+   // console.info("writeErrorResponse::filereader:: end onload...");
 
-    console.info("writeErrorResponse:: end...");
+    //console.info("writeErrorResponse:: end...");
 };
 
 WebServerSimple.prototype.write200Response = function(socketId, file, keepAlive) {
@@ -118,10 +118,10 @@ WebServerSimple.prototype.write200Response = function(socketId, file, keepAlive)
 
     var reader = new FileReader();
     reader.onload = function(e) {
-        console.log("File read successful");
+        //console.log("File read successful");
         view.set(new Uint8Array(e.target.result), header.byteLength);
         chrome.socket.write(socketId, outputBuffer, function(writeInfo) {
-            console.log("WRITE", writeInfo);
+           // console.log("WRITE", writeInfo);
             if (keepAlive) {
                 self.readFromSocket(socketId);
             } else {
@@ -132,7 +132,7 @@ WebServerSimple.prototype.write200Response = function(socketId, file, keepAlive)
             }
         });
     };
-    console.log("Reading file into array buffer..");
+    //console.log("Reading file into array buffer..");
     reader.readAsArrayBuffer(file);
 
 };

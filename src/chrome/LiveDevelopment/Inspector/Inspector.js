@@ -38,6 +38,7 @@ define(function (require, exports, module) {
      */
     function _onMessage(message) {
         var response = JSON.parse(message.data);
+        console.debug("Extension:\t", message.response);
         $exports.triggerHandler("message", [response]);
         if (response.error) {
             $exports.triggerHandler("error", [response.error]);
@@ -107,7 +108,7 @@ define(function (require, exports, module) {
         }
 
         var message = { method: method, id: id, params: params };
-        console.debug(message);
+        console.debug("Sending message:\t" + message.method);
         _socket.postMessage(message);
 
         return promise;
@@ -173,9 +174,13 @@ define(function (require, exports, module) {
         promise.done(function () {
             deferred.resolve();
             _connectDeferred = null;
-            $exports.triggerHandler("connect");
-            initSocket();
             NativeApp.openLiveBrowser(url);
+            setTimeout(function(){
+                $exports.triggerHandler("connect");
+            },250);
+
+            initSocket();
+
         });
         promise.fail(function onFail(err) {
             deferred.reject(err);
