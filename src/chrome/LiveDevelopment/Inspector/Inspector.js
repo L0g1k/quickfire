@@ -177,7 +177,7 @@ define(function (require, exports, module) {
             NativeApp.openLiveBrowser(url);
             setTimeout(function(){
                 $exports.triggerHandler("connect");
-            },250);
+            }, 4000);
 
             initSocket();
 

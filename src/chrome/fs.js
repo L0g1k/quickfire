@@ -65,7 +65,7 @@ define(function (require, exports, module) {
             var existing = chromeStorageObj[ENTRY_KEY] || [];
             existing.push(entryId);
             chromeStorageObj[ENTRY_KEY] = existing;
-            chrome.storage.local.set(chromeStorageObj, callback);
+            chrome.storage.local.set(chromeStorageObj);
 
         } catch (e) {
             console.error('Entry storage not found', e.message);
@@ -315,8 +315,12 @@ define(function (require, exports, module) {
         var entry = statCache[path];
         if(!entry)
             callback(brackets.fs.ERR_NOT_FOUND);
-        else
-            writeText(data, entry, encoding, callback);
+        else {
+            chrome.fileSystem.getWritableEntry(entry, function(writableEntry){
+                writeText(data, writableEntry, encoding, callback);
+            });
+        }
+
 
     }
 
@@ -330,7 +334,7 @@ define(function (require, exports, module) {
                 callback(brackets.fs.NO_ERROR);
             };
 
-            var blob = new Blob([data]);
+            var blob = new Blob([data], {type: 'text/plain'});
             var size = data.length;
 
             writer.write(blob);

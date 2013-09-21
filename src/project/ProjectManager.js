@@ -138,7 +138,7 @@ define(function (require, exports, module) {
      * @private
      * @see getProjectRoot()
      */
-    var _projectRoot = null;
+    var _projectRoot = brackets.chromeApp ? {fullPath : '/'} : null;
 
     /**
      * @private

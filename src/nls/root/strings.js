@@ -79,7 +79,7 @@ define({
     
     "LIVE_DEVELOPMENT_ERROR_TITLE"      : "Live Preview Error",
     "LIVE_DEVELOPMENT_RELAUNCH_TITLE"   : "Connecting to Browser",
-    "LIVE_DEVELOPMENT_ERROR_MESSAGE"    : "In order for Live Preview to connect, you need to install our free Chrome extension.<br /><br />Would you like to install it?",
+    "LIVE_DEVELOPMENT_ERROR_MESSAGE"    : "In order for Live Preview to connect, you need to install the Quickfire Chrome extension.<br /><br />Would you like to install it?",
     "LIVE_DEV_LOADING_ERROR_MESSAGE"    : "Unable to load Live Development page",
     "LIVE_DEV_NEED_HTML_MESSAGE"        : "Open an HTML file in order to launch live preview.",
     "LIVE_DEV_NEED_BASEURL_MESSAGE"     : "To launch live preview with a server-side file, you need to specify a Base URL for this project.",
