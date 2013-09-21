@@ -4,11 +4,11 @@
   <head>
     <meta charset='utf-8' />
     <meta http-equiv="X-UA-Compatible" content="chrome=1" />
-    <meta name="description" content="Brackets : An open source code editor for the web, written in JavaScript, HTML and CSS." />
+    <meta name="description" content="Quickfire : An open source code editor for Google Chrome, written in JavaScript, HTML and CSS." />
 
     <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
 
-    <title>Brackets</title>
+    <title>Quickfire</title>
   </head>
 
   <body>
@@ -18,8 +18,8 @@
         <header class="inner">
           <a id="forkme_banner" href="https://github.com/L0g1k/brackets">View on GitHub</a>
 
-          <h1 id="project_title">Brackets</h1>
-          <h2 id="project_tagline">An open source code editor for the web, written in JavaScript, HTML and CSS.</h2>
+          <h1 id="project_title">Quickfire</h1>
+          <h2 id="project_tagline">An open source code editor for Google Chrome, written in JavaScript, HTML and CSS.</h2>
 
             <section id="downloads">
               <a class="zip_download_link" href="https://github.com/L0g1k/brackets/zipball/master">Download this project as a .zip file</a>
@@ -32,43 +32,36 @@
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
         <h3>
-<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
+<a name="welcome-to-quickfire-for-google-chrome" class="anchor" href="#welcome-to-quickfire-for-google-chrome"><span class="octicon octicon-link"></span></a>Welcome to Quickfire for Google Chrome.</h3>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
-
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
-</code></pre>
-
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<p>Quickfire is a code editor for HTML, CSS, and JavaScript that runs as a Chrome <a href="http://developer.chrome.com/apps/about_apps.html">packaged app</a>. It's based on Adobe's <a href="https://github.com/adobe/brackets">Brackets</a>, and includes support for 'Live Development' with the help of a <a href="https://github.com/L0g1k/brackets-devtools">Chrome extension</a>. Quickfire also has a built-in web server and can run offline. </p>
 
 <h3>
-<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
+<a name="local-directory-support" class="anchor" href="#local-directory-support"><span class="octicon octicon-link"></span></a>Local directory support</h3>
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
-
-<h3>
-<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
-
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+<p>Coding in the cloud is awesome, but sometimes you want to work locally. Quickfire uses Chrome's fileSystem API to load your existing file system directories as projects, just as you'd expect with a normal code editor. That means you can quickly install Quickfire through the Chrome store, and try it out on a project that's already on your computer.   </p>
 
 <h3>
-<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
+<a name="built-in-web-server" class="anchor" href="#built-in-web-server"><span class="octicon octicon-link"></span></a>Built-in web server</h3>
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+<p>You might already have a web server on your machine. If you don't, Quickfire comes bundled with one that will automatically work out of the box with the projects you load. It will serve your files using an http://localhost url. It starts on port 8081 by default, so if you use that port then please change it in the settings.</p>
+
+<h3>
+<a name="live-development" class="anchor" href="#live-development"><span class="octicon octicon-link"></span></a>Live Development</h3>
+
+<p>To use Brackets' <a href="http://blog.brackets.io/2013/02/08/live-development-with-brackets-experimental/">Live Development</a>, you need an additional extension. That's because Chrome's packaged apps aren't given all the same permissions as extensions; in particular they don't have access to Chrome's debugger API. The extension is a quick install, and will only run on localhost. If you try to start Live Development without it, you'll be prompted to install the extension so Quickfire can talk to the Chrome debugger. </p>
 
 <h3>
 <a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
 
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+<p>Having trouble with Quickfire? Flick me an email at <a href="mailto:jmitcheson@gmail.com">jmitcheson@gmail.com</a>, or log an issue using Github,  and I'll help you out.</p>
       </section>
     </div>
 
     <!-- FOOTER  -->
     <div id="footer_wrap" class="outer">
       <footer class="inner">
-        <p class="copyright">Brackets maintained by <a href="https://github.com/L0g1k">L0g1k</a></p>
+        <p class="copyright">Quickfire maintained by <a href="https://github.com/L0g1k">L0g1k</a></p>
         <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
       </footer>
     </div>
