@@ -8,7 +8,7 @@ define(function (require, exports, module) {
     "use strict";
 
     var Async = require("utils/Async");
-
+    var browserFS;
     var NO_ERROR = 0;
     var ERR_UNKNOWN = 1;
     var ERR_INVALID_PARAMS = 2;
@@ -27,6 +27,26 @@ define(function (require, exports, module) {
     var statCache = {};
 
     var virtualFiles = [];
+
+    function initFiler() {
+        var deferred = $.Deferred();
+        if(!browserFS) {
+            var requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem
+            try {
+                requestFileSystem(window.PERSISTENT, 1024*1024 /*1MB*/, function(fs){
+                    browserFS = fs;
+                    deferred.resolve();
+                }, function(error){
+                    deferred.reject(error)
+                });
+            } catch (e) {
+                deferred.reject(e);
+            }
+        } else {
+            deferred.resolve();
+        }
+        return deferred.promise();
+    }
 
     function registerVirtualFileListing(file) {
         virtualFiles.push(file);
@@ -76,40 +96,83 @@ define(function (require, exports, module) {
         return chromeStorageObj[ENTRY_KEY] || [];
     }
 
-    function readdir(path, callback) {
-        var entries = getEntryReferences();
-        Async.any(entries, _findPathInDirectory.bind(this, path)).then(function (entry) {
-            if (entry.isDirectory)
-                entry.createReader().readEntries(function(entries){
-                    var map = entries.map(function (entry) {
-                        return entry.name;
-                    });
-                    callback(brackets.fs.NO_ERROR, map);
+    function _readDirectory(entry, callback) {
+        if (entry.isDirectory)
+            entry.createReader().readEntries(function (entries) {
+                var map = entries.map(function (entry) {
+                    return entry.name;
                 });
-            else
-                callback(brackets.fs.ERR_NOT_FOUND);
-        }).fail(function () {
-                callback(brackets.fs.ERR_NOT_FOUND);
+                callback(brackets.fs.NO_ERROR, map);
             });
+        else
+            callback(brackets.fs.ERR_NOT_FOUND);
     }
-    function readdir_(path, callback) {
-        console.debug("readdir", path);
-        var entries = getEntryReferences();
-        entries.forEach(function(id){
-            chrome.fileSystem.isRestorable(id, function(){
-                chrome.fileSystem.restoreEntry(id, function(entry){
-                    if(entry.isDirectory && path == (entry.fullPath + '/')) {
-                        entry.createReader().readEntries(function(entries){
-                            var map = entries.map(function (entry) {
-                                return entry.name;
-                            });
-                            callback(brackets.fs.NO_ERROR, map);
-                        });
-                    }
-                });
+
+    function readdir(path, callback) {
+
+        var userDirectories = getEntryReferences();
+
+        function lookInBrowser() {
+            initFiler().then(function(){
+                var deferred = $.Deferred();
+                deferred.then(function(entry){
+                    _readDirectory(entry, callback);
+                }, function(error){
+                    callback(brackets.fs.ERR_NOT_FOUND);
+                })
+                _resolvePath(browserFS.root, path, deferred);
+            });
+        }
+
+        Async.any(userDirectories, _findPathInDirectory.bind(this, path)).then(function (entry) {
+            _readDirectory(entry, callback);
+        }).fail(function () {
+                lookInBrowser();
+        });
+    }
+
+
+
+    function findPath(entry, path, deferred) {
+        if (entry.isDirectory) {
+            if (path.indexOf(entry.fullPath) == -1) {
+                deferred.reject();
+            } else {
+                if (path == entry.fullPath || path == (entry.fullPath + '/')) {
+                    deferred.resolve(entry);
+                } else {
+                    _resolvePath(entry, path, deferred);
+                }
+            }
+
+        } else {
+            deferred.reject();
+        }
+    }
+
+    function _findPathInDirectory(path, id) {
+        var deferred = $.Deferred();
+        chrome.fileSystem.isRestorable(id, function () {
+            chrome.fileSystem.restoreEntry(id, function (entry) {
+                findPath(entry, path, deferred);
             });
         });
+        return deferred.promise();
+    }
 
+    function _resolvePath(entry, path, deferred) {
+        entry.getFile(path, {}, function (file) {
+            deferred.resolve(file);
+        }, function (err) {
+            if (err.code == FileError.TYPE_MISMATCH_ERR) {
+                entry.getDirectory(path, {}, function (directory) {
+                    deferred.resolve(directory);
+                }, function (err) {
+                    deferred.reject(err);
+                });
+            } else
+                deferred.reject(err);
+        });
     }
 
     function makedir(path, permission, callback) {
@@ -182,101 +245,42 @@ define(function (require, exports, module) {
 
     function stat(path, callback) {
         var entries = getEntryReferences();
-        Async.any(entries, _findPathInDirectory.bind(this, path)).then(function (entry) {
-            if (entry.isDirectory)
-                _statDirectory(entry, callback)
-            else
-                _statFile(entry, callback)
-        }).fail(function () {
-                callback(brackets.fs.ERR_NOT_FOUND)
-        });
+
+        function inBrowser() {
+            statBrowserFS(path).then(function(entry){
+                _completeStat(entry, callback);
+            }, function(){
+                callback(brackets.fs.ERR_NOT_FOUND);
+            })
+        }
+
+        if(entries.length == 0) {
+            inBrowser();
+        } else {
+            Async.any(entries, _findPathInDirectory.bind(this, path)).then(function(entry){
+                _completeStat(entry, callback);
+            }).fail(inBrowser);
+        }
     }
 
-    function _findPathInDirectory(path, id) {
-        var deferred = $.Deferred();
-        chrome.fileSystem.isRestorable(id, function () {
-            chrome.fileSystem.restoreEntry(id, function (entry) {
-                if (entry.isDirectory) {
-                    if(path.indexOf(entry.fullPath) == -1) {
-                        deferred.reject();
-                    } else {
-                        if (path == entry.fullPath || path == (entry.fullPath + '/')) {
-                            deferred.resolve(entry);
-                        } else {
-                            entry.getFile(path, {}, function(file){
-                                deferred.resolve(file);
-                            }, function(err){
-                                if(err.code == FileError.TYPE_MISMATCH_ERR) {
-                                    entry.getDirectory(path, {}, function(directory){
-                                        deferred.resolve(directory);
-                                    }, function(err){
-                                        deferred.reject(err);
-                                    });
-                                } else
-                                    deferred.reject(err);
-                            });
-                        }
-                    }
+    function _completeStat(entry, callback) {
+        if (entry.isDirectory)
+            _statDirectory(entry, callback)
+        else
+            _statFile(entry, callback)
+    }
 
-                } else {
-                    deferred.reject();
-                }
-            });
-        });
+    function statBrowserFS(path) {
+        var deferred = $.Deferred();
+
+         initFiler().then(function(){
+             findPath(browserFS.root, path, deferred);
+         });
+
         return deferred.promise();
     }
 
-    function stat2(path, callback) {
-        console.debug("stat", path);
-        var resolved = false;
 
-        // This is a hack until I have a proper solution to determine when something is 'not found'.
-        var timer = setTimeout(function(){
-            callback(brackets.fs.ERR_NOT_FOUND)
-        }, 100);
-
-        var resolve = function() { clearTimeout(timer) }
-        var entries = getEntryReferences();
-            entries.forEach(function (id, index) {
-                chrome.fileSystem.isRestorable(id, function () {
-                    chrome.fileSystem.restoreEntry(id, function (entry) {
-                        if (entry.isDirectory) {
-                            if (path == entry.fullPath || path == (entry.fullPath + '/')) {
-                                resolved = true;
-                                resolve();
-                                callback(brackets.fs.NO_ERROR, {
-                                    isFile: function () {
-                                        return false
-                                    },
-                                    isDirectory: function () {
-                                        return true
-                                    },
-                                    mtime: new Date()
-                                })
-                            } else {
-                                entry.createReader().readEntries(function (entries) {
-                                    entries.forEach(function (entry) {
-                                        if (!entry.isDirectory && entry.fullPath == path) {
-                                            resolved = true;
-                                            resolve();
-                                            _statFile(entry, callback);
-                                        }
-                                    })
-                                });
-                            }
-                        } else if (entry.fullPath == path) {
-                            resolved = true;
-                            resolve();
-                            _statFile(entry, callback);
-                        }
-                        if(index == entries.length - 1  && !resolved) {
-                            //callback(brackets.fs.ERR_NOT_FOUND);
-                        }
-                    });
-                });
-            });
-
-    }
 
     /**
      * Reads a file which we've already seen. If we haven't seen it, then try to load it via http request

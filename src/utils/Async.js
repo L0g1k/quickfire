@@ -360,6 +360,11 @@ define(function (require, exports, module) {
     }
 
     function any(items, beginProcessItem) {
+
+        if(!items.length) {
+            return $.Deferred().reject().promise();
+        }
+
         var deferred = $.Deferred();
         var resolved = false;
         var total = items.length;

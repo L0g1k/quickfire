@@ -1,29 +1,17 @@
-function launchEditor() {
-    chrome.app.runtime.onLaunched.addListener(function (arg) {
-        chrome.app.window.create(
-            'src/index.html',
-            { bounds: { width:780, height:490}, type:"shell" });
-    });
-}
-
-function loadDemos(fs) {
-    var alwaysDemo = false;
-    if(alwaysDemo) {
-        require(["src/chrome/demos/DemoLoader"], function(DemoLoader){
-            console.log(DemoLoader);
-            DemoLoader.loadDemos(fs);
+chrome.app.runtime.onLaunched.addListener(function (arg) {
+    require(["src/chrome/utils/DemoLoader"], function(demoLoader){
+        demoLoader.checkThatDemosExist().done(launchEditor).fail(function(){
+            demoLoader.loadDemos().done(launchEditor).fail(function(error){
+                console.error("There was a problem loading demos. It's likely that the application won't " +
+                    "function properly. Starting anyway...", error);
+            })
         });
-    }
-    chrome.runtime.onInstalled.addListener(function(details){
-        console.log(details);
-        if(details.reason = "install") {
-            require(["src/chrome/demos/DemoLoader"], function(DemoLoader){
-                console.log(DemoLoader);
-                DemoLoader.loadDemos(fs);
-            });
-        }
     });
+});
+
+function launchEditor() {
+    chrome.app.window.create(
+        'src/index.html',
+        { bounds: { width:780, height:490}, type:"shell" });
+
 }
-
-launchEditor();
-

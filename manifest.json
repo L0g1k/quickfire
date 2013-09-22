@@ -9,6 +9,7 @@
     "app": {
         "background": {
             "scripts": [
+                "src/thirdparty/jquery-2.0.1.js",
                 "src/thirdparty/requirejs/require.js",
                 "src/chrome/background.js"
             ]

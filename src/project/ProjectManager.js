@@ -952,6 +952,8 @@ define(function (require, exports, module) {
                             _projectRoot = {
                                 fullPath: "/"
                             };
+                            result.reject();
+
                             return;
                         }
 
