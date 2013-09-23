@@ -6,14 +6,21 @@ define(function (require, exports, module) {
     "use strict";
 
     var socketInfo;
+    var FILTER_REQUEST_TIMEOUT = 5000;
 
+    /**
+     * @private
+     * @type {number}
+     * Duration to wait before passing a filtered request to the static file server.
+     */
+    var _filterRequestTimeout = FILTER_REQUEST_TIMEOUT;
 function WebServerSimple(host, port, fs) {
 
     var self = this;
     if(!fs) console.error('Could not find file system; web server can not start');
     this.fs = fs;
     this._connected = false;
-
+    this.timeoutId = 0;
     chrome.socket.create("tcp", {}, function(_socketInfo) {
         socketInfo = _socketInfo;
         self._connected = true;
@@ -57,15 +64,20 @@ WebServerSimple.prototype.readFromSocket = function(socketId) {
             if (q != -1) {
                 uri = uri.substring(0, q);
             }
-            self.fs.getFileW3C(decodeURIComponent(uri), { create: false }, function(file){
+            var path = decodeURIComponent(uri);
+            self.fs.getFileW3C(path, { create: false }, function(file){
 
                 file.file(function(theFile){
                    // console.log("GET 200 " + uri);
-                    self.write200Response(socketId, theFile, false);
+                    // dispatch request event
+                    $(self).triggerHandler("staticServer.requestFilter", [socketId, path]);
+                    //self.write200Response(socketId, theFile, false);
+                    // set a timeout if custom responses are not returned
+                   self.timeoutId = setTimeout(function () { self.write200Response(socketId, theFile, false); }, _filterRequestTimeout);
                 });
 
             }, function(err){
-                console.warn("File does not exist..." + err);
+                console.warn("File does not exist..." + path);
                 self.writeErrorResponse(socketId, 404, false);
                 return;
             });
@@ -107,35 +119,36 @@ WebServerSimple.prototype.writeErrorResponse = function(socketId, errorCode, kee
     //console.info("writeErrorResponse:: end...");
 };
 
-WebServerSimple.prototype.write200Response = function(socketId, file, keepAlive) {
-    var self = this;
-    var contentType = (file.type === "") ? "text/plain" : file.type;
-    var contentLength = file.size;
-    var header = stringToUint8Array("HTTP/1.0 200 OK\nContent-length: " + file.size + "\nAccess-Control-Allow-Origin: * \nContent-type:" + contentType + ( keepAlive ? "\nConnection: keep-alive" : "") + "\n\n");
-    var outputBuffer = new ArrayBuffer(header.byteLength + file.size);
-    var view = new Uint8Array(outputBuffer);
-    view.set(header, 0);
-
-    var reader = new FileReader();
-    reader.onload = function(e) {
-        //console.log("File read successful");
-        view.set(new Uint8Array(e.target.result), header.byteLength);
-        chrome.socket.write(socketId, outputBuffer, function(writeInfo) {
-           // console.log("WRITE", writeInfo);
+    WebServerSimple.prototype.writeResponse = function(fileSize, contentType, keepAlive, data, socketId) {
+        var header = stringToUint8Array("HTTP/1.0 200 OK\nContent-length: " + fileSize + "\nAccess-Control-Allow-Origin: * \nContent-type:" + contentType + ( keepAlive ? "\nConnection: keep-alive" : "") + "\n\n");
+        var outputBuffer = new ArrayBuffer(header.byteLength + fileSize);
+        var view = new Uint8Array(outputBuffer);
+        view.set(header, 0);
+        view.set(new Uint8Array(data), header.byteLength);
+        chrome.socket.write(socketId, outputBuffer, function (writeInfo) {
             if (keepAlive) {
-                self.readFromSocket(socketId);
+                this.readFromSocket(socketId);
             } else {
                 chrome.socket.destroy(socketId);
-                chrome.socket.accept(socketInfo.socketId, function(acceptInfo){
-                    self.onAccept(acceptInfo);
-                });
+                chrome.socket.accept(socketInfo.socketId, this.onAccept.bind(this));
             }
-        });
-    };
-    //console.log("Reading file into array buffer..");
-    reader.readAsArrayBuffer(file);
+        }.bind(this));
+    }
 
-};
+    WebServerSimple.prototype.write200Response = function(socketId, file, keepAlive) {
+
+        var reader = new FileReader();
+
+        reader.onload = function(e) {
+            var data = e.target.result;
+            var fileSize = file.size;
+            var contentType = (file.type === "") ? "text/plain" : file.type;
+            this.writeResponse(fileSize, contentType, keepAlive, data, socketId);
+        }.bind(this);
+
+        reader.readAsArrayBuffer(file);
+
+    };
 
 var stringToUint8Array = function(string) {
     var buffer = new ArrayBuffer(string.length);

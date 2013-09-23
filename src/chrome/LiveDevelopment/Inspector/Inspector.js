@@ -161,8 +161,7 @@ define(function (require, exports, module) {
      * @param url
      * @returns {*}
      */
-    function connectToURL(url) {
-        debug("Connection to " + url + " requested");
+    function connectToURL() {
 
         if (_connectDeferred) {
             // reject an existing connection attempt
@@ -174,10 +173,10 @@ define(function (require, exports, module) {
         promise.done(function () {
             deferred.resolve();
             _connectDeferred = null;
-            NativeApp.openLiveBrowser(url);
+            NativeApp.openLiveBrowser("about:blank");
             setTimeout(function(){
                 $exports.triggerHandler("connect");
-            }, 4000);
+            }, 2000);
 
             initSocket();
 

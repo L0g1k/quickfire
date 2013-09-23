@@ -123,7 +123,8 @@ define(function (require, exports, module) {
 
         if (this.chromeWebServer.connected()) {
                 var portString = this._port == 80 ? '' : (':' + this._port);
-                this._baseUrl = "http://localhost" + portString + currentProject;
+                this._baseUrl = "http://localhost" + portString + currentProject + "/";
+
                 readyToServeDeferred.resolve();
         } else {
             // nodeConnection has been connected once (because the deferred
@@ -186,8 +187,8 @@ define(function (require, exports, module) {
      * Send HTTP response data back to the StaticServerSomain
      */
     StaticServer.prototype._send = function (location, response) {
-        if (this._nodeConnection.connected()) {
-            this._nodeConnection.domains.staticServer.writeFilteredResponse(location.root, location.pathname, response);
+        if (this.chromeWebServer.connected()) {
+            this.chromeWebServer.domains.staticServer.writeFilteredResponse(location.root, location.pathname, response);
         }
     };
     
@@ -197,8 +198,8 @@ define(function (require, exports, module) {
      * @param {jQuery.Event} event
      * @param {{hostname: string, pathname: string, port: number, root: string}} request
      */
-    StaticServer.prototype._onRequestFilter = function (event, request) {
-        var key             = request.location.pathname,
+    StaticServer.prototype._onRequestFilter = function (event, socketId, path) {
+        var key             = this._documentKey(path),
             liveDocument    = this._liveDocuments[key],
             response        = null;
 
@@ -206,22 +207,38 @@ define(function (require, exports, module) {
         if (liveDocument && liveDocument.getResponseData) {
             response = liveDocument.getResponseData();
         }
-        
-        this._send(request.location, response);
+
+        this.chromeWebServer.writeResponse(
+            response.body.length * 2,
+            "text/html",
+            false,
+            str2ab(response.body),
+            socketId);
+
+        clearTimeout(this.chromeWebServer.timeoutId)
     };
-    
+
+    function str2ab(str) {
+        var buf = new ArrayBuffer(str.length); // utf8
+        var bufView = new Uint8Array(buf);
+        for (var i=0, strLen=str.length; i<strLen; i++) {
+            bufView[i] = str.charCodeAt(i);
+        }
+        return buf;
+    }
+
     /**
      * See BaseServer#start. Starts listenting to StaticServerDomain events.
      */
     StaticServer.prototype.start = function () {
-        $(this._nodeConnection).on("staticServer.requestFilter", this._onRequestFilter);
+        $(this.chromeWebServer).on("staticServer.requestFilter", this._onRequestFilter);
     };
 
     /**
      * See BaseServer#stop. Remove event handlers from StaticServerDomain.
      */
     StaticServer.prototype.stop = function () {
-        $(this._nodeConnection).off("staticServer.requestFilter", this._onRequestFilter);
+        $(this.chromeWebServer).off("staticServer.requestFilter", this._onRequestFilter);
     };
 
     exports.StaticChromeServer = StaticServer;

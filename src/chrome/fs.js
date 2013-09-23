@@ -320,9 +320,7 @@ define(function (require, exports, module) {
         if(!entry)
             callback(brackets.fs.ERR_NOT_FOUND);
         else {
-            chrome.fileSystem.getWritableEntry(entry, function(writableEntry){
-                writeText(data, writableEntry, encoding, callback);
-            });
+            writeText(data, entry, encoding, callback);
         }
 
 

@@ -913,7 +913,7 @@ define(function LiveDevelopment(require, exports, module) {
                                 browserStarted = false;
                                 window.setTimeout(function () {
                                     // After browser closes, try to open the interstitial page again
-                                    _openInterstitialPage();
+                                    ();
                                 });
                             })
                             .fail(function (err) {
@@ -990,7 +990,39 @@ define(function LiveDevelopment(require, exports, module) {
         $(Inspector).one("connect", _onConnect);
         
         // open browser to the interstitial page to prepare for loading agents
-        _openInterstitialPage();
+        openDocument();//_openInterstitialPage();
+    }
+
+    function openDocument() {
+        Inspector.connectToURL().fail(function onConnectFail(err) {
+            _setStatus(STATUS_ERROR);
+
+            var dialogPromise = Dialogs.showModalDialog(
+                DefaultDialogs.DIALOG_ID_LIVE_DEVELOPMENT,
+                Strings.LIVE_DEVELOPMENT_RELAUNCH_TITLE,
+                Strings.LIVE_DEVELOPMENT_ERROR_MESSAGE,
+                [
+                    {
+                        className: Dialogs.DIALOG_BTN_CLASS_LEFT,
+                        id:        Dialogs.DIALOG_BTN_CANCEL,
+                        text:      Strings.CANCEL
+                    },
+                    {
+                        className: Dialogs.DIALOG_BTN_CLASS_PRIMARY,
+                        id:        Dialogs.DIALOG_BTN_OK,
+                        text:      Strings.RELAUNCH_CHROME
+                    }
+                ]
+            );
+
+            dialogPromise.done(function (id) {
+                if (id === Dialogs.DIALOG_BTN_OK) {
+                    NativeApp.openURLInDefaultBrowser(brackets.chrome.extensionInstallURL)
+                } else {
+                    _openDeferred.reject("CANCEL");
+                }
+            });
+        });
     }
     
     function _prepareServer(doc) {
