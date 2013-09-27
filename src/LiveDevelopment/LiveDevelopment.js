@@ -553,7 +553,9 @@ define(function LiveDevelopment(require, exports, module) {
             getEnabledAgents(),
             function (name) {
                 return _invokeAgentMethod(name, "load").done(function () {
-                    _loadedAgentNames.push(name);
+                    if(_loadedAgentNames.indexOf(name) == -1)
+                        _loadedAgentNames.push(name);
+                    console.debug("Agent has loaded:\t" + name);
                 });
             },
             true
@@ -563,10 +565,11 @@ define(function LiveDevelopment(require, exports, module) {
         allAgentsPromise = Async.withTimeout(allAgentsPromise, 10000);
 
         allAgentsPromise.done(function () {
+            var doc = _getCurrentDocument();
             // After (1) the interstitial page loads, (2) then browser navigation
             // to the base URL is completed, and (3) the agents finish loading
             // gather related documents and finally set status to STATUS_ACTIVE.
-            var doc = _getCurrentDocument();
+            console.debug("All agents promise resolved");
 
             if (doc) {
                 var status = STATUS_ACTIVE,
@@ -586,16 +589,24 @@ define(function LiveDevelopment(require, exports, module) {
 
                         result.resolve();
                     })
-                    .fail(result.reject);
+                    .fail(function(){
+                        console.error("Related documents promise failed");
+                        result.reject();
+                    });
             } else {
+                console.error("Doc was null");
                 result.reject();
             }
         });
 
-        allAgentsPromise.fail(result.reject);
+        allAgentsPromise.fail(function(){
+            console.error("All agents promise failed");
+            //result.reject();
+        });
         
         // show error loading live dev dialog
         result.fail(function () {
+            console.debug("Agents failed to all load. Agents that did load:", _loadedAgentNames);
             _setStatus(STATUS_ERROR);
 
             Dialogs.showModalDialog(
@@ -811,8 +822,10 @@ define(function LiveDevelopment(require, exports, module) {
     function _onInterstitialPageLoad() {
         // Domains for some agents must be enabled first before loading
         var enablePromise = Inspector.Page.enable().then(_enableAgents);
-        
+        console.debug("Interstitial page loaded");
         enablePromise.done(function () {
+
+
             // Some agents (e.g. DOMAgent and RemoteAgent) require us to
             // navigate to the page first before loading can complete.
             // To accomodate this, we load all agents and navigate in
@@ -820,6 +833,7 @@ define(function LiveDevelopment(require, exports, module) {
             loadAgents();
 
             var doc = _getCurrentDocument();
+            console.debug("Page enabled", doc);
             if (doc) {
                 // Navigate from interstitial to the document
                 // Fires a frameNavigated event

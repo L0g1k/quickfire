@@ -69,11 +69,17 @@ WebServerSimple.prototype.readFromSocket = function(socketId) {
 
                 file.file(function(theFile){
                    // console.log("GET 200 " + uri);
-                    // dispatch request event
-                    $(self).triggerHandler("staticServer.requestFilter", [socketId, path]);
+                   // dispatch request event
+                   var html = path.indexOf(".html") == path.length -5;
+                   if(html) {
+                       $(self).triggerHandler("staticServer.requestFilter", [socketId, path]);
+                       self.timeoutId = setTimeout(function () { self.write200Response(socketId, theFile, false); }, _filterRequestTimeout);
+                   } else {
+                       self.write200Response(socketId, theFile, false);
+                   }
+
                     //self.write200Response(socketId, theFile, false);
-                    // set a timeout if custom responses are not returned
-                   self.timeoutId = setTimeout(function () { self.write200Response(socketId, theFile, false); }, _filterRequestTimeout);
+                   // set a timeout if custom responses are not returned
                 });
 
             }, function(err){

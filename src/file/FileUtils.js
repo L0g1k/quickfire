@@ -428,6 +428,20 @@ define(function (require, exports, module) {
         return extFirst ? (cmpExt || cmpNames) : (cmpNames || cmpExt);
     }
 
+    function getRootFolderName(filePath) {
+        // /samples/root/Getting%20Started/screenshots/quick-edit.png
+        var folderName = null;
+        var indexOf = filePath.indexOf('/');
+        if(indexOf != -1) {
+            if(indexOf == 0) {
+                folderName = filePath.substr(1);
+                indexOf = folderName.indexOf('/');
+            }
+            folderName = folderName.substr(0, indexOf);
+        }
+        return folderName;
+    }
+
 
     // Define public API
     exports.LINE_ENDINGS_CRLF              = LINE_ENDINGS_CRLF;
@@ -444,6 +458,7 @@ define(function (require, exports, module) {
     exports.getNativeBracketsDirectoryPath = getNativeBracketsDirectoryPath;
     exports.getNativeModuleDirectoryPath   = getNativeModuleDirectoryPath;
     exports.canonicalizeFolderPath         = canonicalizeFolderPath;
+    exports.getRootFolderName              = getRootFolderName;
     exports.isAffectedWhenRenaming         = isAffectedWhenRenaming;
     exports.updateFileEntryPath            = updateFileEntryPath;
     exports.isStaticHtmlFileExt            = isStaticHtmlFileExt;

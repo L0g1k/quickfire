@@ -26,8 +26,6 @@ define(function (require, exports, module) {
     // Brackets will often stat a file, get it's path, then ask for it again right away through readFile.
     var statCache = {};
 
-    var virtualFiles = [];
-
     function initFiler() {
         var deferred = $.Deferred();
         if(!browserFS) {
@@ -46,36 +44,6 @@ define(function (require, exports, module) {
             deferred.resolve();
         }
         return deferred.promise();
-    }
-
-    function registerVirtualFileListing(file) {
-        virtualFiles.push(file);
-    }
-
-    function addVirtualFileListing(path, contents) {
-        webkitRequestFileSystem(Window.PERSISTENT, 5*1024*1024, function(fs){
-            var errorCallback = function (error) {
-                console.error(error);
-            };
-            fs.root.getFile(path, {create: true, exclusive: false}, function(fileEntry){
-                // Create a FileWriter object for our FileEntry (log.txt).
-                fileEntry.createWriter(function(fileWriter) {
-
-                    fileWriter.onwriteend = function(e) {
-                        console.log('Write completed.');
-                    };
-
-                    fileWriter.onerror = errorCallback;
-
-                    // Create a new Blob and write it to log.txt.
-                    var blob = new Blob([contents], {type: 'text/plain'});
-
-                    fileWriter.write(blob);
-
-                }, errorCallback);
-                registerVirtualFileListing(fileEntry);
-            }, errorCallback);
-        });
     }
 
     function saveEntryReference(entryId) {
@@ -202,21 +170,16 @@ define(function (require, exports, module) {
         });
     }
 
-    function getFileW3C(path, options, callback, err) {
+    function getFileW3C(path, options, callback, errback) {
         var file = statCache[path];
         if(file) {
             callback(file);
         } else {
-            var found = false;
-            for (var i = 0; i < virtualFiles.length; i++) {
-                var virtualFile = virtualFiles[i];
-                if(virtualFile.fullPath == path) {
-                    found = true;
-                    callback(virtualFile);
-                }
-            }
-            if(!found)
-                err(brackets.fs.ERR_NOT_FOUND);
+            stat(path, function(err){
+                if(err == brackets.fs.NO_ERROR) {
+                    callback(statCache[path])
+                } else errback();
+            });
         }
     }
 
@@ -322,8 +285,6 @@ define(function (require, exports, module) {
         else {
             writeText(data, entry, encoding, callback);
         }
-
-
     }
 
     function writeText(data, entry, encoding, callback) {
@@ -371,8 +332,6 @@ define(function (require, exports, module) {
     exports.ERR_NOT_DIRECTORY = ERR_NOT_DIRECTORY;
 
     exports.getFileW3C = getFileW3C;
-    exports.registerVirtualFileListing = registerVirtualFileListing;
-    exports.addVirtualFileListing = addVirtualFileListing;
     exports.readdir = readdir;
     exports.makedir = makedir;
     exports.stat = stat;

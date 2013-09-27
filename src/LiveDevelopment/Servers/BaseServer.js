@@ -123,7 +123,8 @@ define(function (require, exports, module) {
             baseUrl = "";
 
         baseUrl = this.getBaseUrl();
-
+        if(!url.length)
+            return null;
         if (baseUrl !== "" && url.indexOf(baseUrl) === 0) {
             // Use base url to translate to local file path.
             // Need to use encoded project path because it's decoded below.

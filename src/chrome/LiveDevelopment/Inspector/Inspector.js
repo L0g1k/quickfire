@@ -6,9 +6,9 @@ define(function (require, exports, module) {
 
     // jQuery exports object for events
     var $exports = $(exports),
-        extensionId = "gbipnkadpcadnnelfkbgoenoojgabhfa",
+        extensionId = "paoopjjblcebddifekcalpddjekpbipn",
         _connectDeferred, // The deferred connect
-        _socket = chrome.runtime.connect(extensionId, { name: 'RDPBridgeServer'}), // chrome extension 'socket'
+        _socket, // chrome extension 'socket'
         _messageId = 1, // id used for remote method calls, auto-incrementing
         _messageCallbacks = {}; // {id -> function} for remote method calls
 
@@ -38,7 +38,7 @@ define(function (require, exports, module) {
      */
     function _onMessage(message) {
         var response = JSON.parse(message.data);
-        console.debug("Extension:\t", message.response);
+        console.debug("Extension:\t", response);
         $exports.triggerHandler("message", [response]);
         if (response.error) {
             $exports.triggerHandler("error", [response.error]);
@@ -57,16 +57,28 @@ define(function (require, exports, module) {
 
     function checkExtension() {
         var deferred = $.Deferred();
-        if(_socket) {
-            try {
-                _socket.postMessage({});
-                deferred.resolve();
-            } catch (e) {
+
+        try {
+
+            var listener = function (message) {
+                if (message == "polo") {
+                    console.debug("Extension installed");
+                    deferred.resolve();
+                    _socket.onMessage.removeListener(listener);
+                    clearTimeout(timer);
+                }
+            };
+            var timer = setTimeout(function () {
                 deferred.reject();
-            }
-        } else {
+            }, 100);
+            _socket = chrome.runtime.connect(extensionId, { name: 'RDPBridgeServer'}); // chrome extension 'socket'
+            _socket.onMessage.addListener(listener);
+            _socket.postMessage("marco");
+        } catch (e) {
             deferred.reject();
+            _connectDeferred = null;
         }
+
         return deferred.promise();
     }
 

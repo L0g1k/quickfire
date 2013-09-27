@@ -30,7 +30,7 @@ define(function (require, exports, module) {
 
     'use strict';
 
-    var self = this; // window or worker context.
+    var self = window; // window or worker context.
 
     self.URL = self.URL || self.webkitURL;
     self.requestFileSystem = self.requestFileSystem || self.webkitRequestFileSystem;
@@ -241,6 +241,7 @@ define(function (require, exports, module) {
 
 // Extend FileError with custom errors and a convenience method to get error
 // code mnemonic.
+    var FileError = window.FileError;
     FileError.BROWSER_NOT_SUPPORTED = 1000;
 
 // TODO: remove when FileError.name is implemented (crbug.com/86014).

@@ -123,7 +123,7 @@ define(function (require, exports, module) {
 
         if (this.chromeWebServer.connected()) {
                 var portString = this._port == 80 ? '' : (':' + this._port);
-                this._baseUrl = "http://localhost" + portString + currentProject + "/";
+                this._baseUrl = encodeURI("http://localhost" + portString + currentProject + "/");
 
                 readyToServeDeferred.resolve();
         } else {
@@ -231,6 +231,7 @@ define(function (require, exports, module) {
      * See BaseServer#start. Starts listenting to StaticServerDomain events.
      */
     StaticServer.prototype.start = function () {
+        this.stop();
         $(this.chromeWebServer).on("staticServer.requestFilter", this._onRequestFilter);
     };
 
@@ -238,7 +239,7 @@ define(function (require, exports, module) {
      * See BaseServer#stop. Remove event handlers from StaticServerDomain.
      */
     StaticServer.prototype.stop = function () {
-        $(this.chromeWebServer).off("staticServer.requestFilter", this._onRequestFilter);
+        $(this.chromeWebServer).off("staticServer.requestFilter");
     };
 
     exports.StaticChromeServer = StaticServer;
