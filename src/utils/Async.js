@@ -374,14 +374,11 @@ define(function (require, exports, module) {
                 beginProcessItem(item).then(function(result){
                     deferred.resolve(result);
                 }).fail(function(err){
+                        processed++;
                         if(total == processed)
                             deferred.reject(err);
-                }).always(function(){
-                     processed++;
-                    })
-
-
-        })
+                })
+        });
         return deferred.promise();
     }
 
