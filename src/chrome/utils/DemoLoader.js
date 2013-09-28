@@ -64,6 +64,7 @@ define(function (require, exports, module) {
     function copyDemos() {
         try {
             filer.cp(samples, filer.fs.root);
+            masterDeferred.resolve();
         } catch (e) {
             masterDeferred.reject(e);
         }

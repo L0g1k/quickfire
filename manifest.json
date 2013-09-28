@@ -1,8 +1,8 @@
 {
     "name": "Quickfire",
-    "version": "0.2",
+    "version": "0.3",
     "manifest_version": 2,
-    "description": "The fastest way to code HTML websites",
+    "description": "The fastest way to code HTML websites (Windows users please see note)",
     "icons": {
         "128": "src/chrome/img/icon_128.png"
     },
@@ -19,7 +19,6 @@
         {
             "socket": ["tcp-connect", "tcp-listen"]
         },
-        "syncFileSystem",
         "storage",
         "fileSystem",
         "fileSystem.retainEntries",

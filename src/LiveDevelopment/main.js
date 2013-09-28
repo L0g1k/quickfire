@@ -76,7 +76,8 @@ define(function main(require, exports, module) {
         Strings.LIVE_DEV_STATUS_TIP_PROGRESS2,
         Strings.LIVE_DEV_STATUS_TIP_CONNECTED,
         Strings.LIVE_DEV_STATUS_TIP_OUT_OF_SYNC,
-        Strings.LIVE_DEV_STATUS_TIP_SYNC_ERROR
+        Strings.LIVE_DEV_STATUS_TIP_SYNC_ERROR,
+        Strings.LIVE_DEV_OS_NOT_SUPPORTED
     ];
 
     var _statusStyle = ["warning", "", "info", "info", "success", "out-of-sync", "sync-error"];  // Status indicator's CSS class
@@ -173,24 +174,44 @@ define(function main(require, exports, module) {
     /** Create the menu item "Go Live" */
     function _setupGoLiveButton() {
         _$btnGoLive = $("#toolbar-go-live");
-        _$btnGoLive.click(function onGoLive() {
-            _handleGoLiveCommand();
-        });
-        $(LiveDevelopment).on("statusChange", function statusChange(event, status, reason) {
-            // status starts at -1 (error), so add one when looking up name and style
-            // See the comments at the top of LiveDevelopment.js for details on the 
-            // various status codes.
-            _setLabel(_$btnGoLive, null, _statusStyle[status + 1], _statusTooltip[status + 1]);
-            _showStatusChangeReason(reason);
-            if (config.autoconnect) {
-                window.sessionStorage.setItem("live.enabled", status === 3);
-            }
-        });
+        chrome.runtime.getPlatformInfo(function(platform){
+            if(platform.os != "win") {
 
-        // Initialize tooltip for 'not connected' state
-        _setLabel(_$btnGoLive, null, _statusStyle[1], _statusTooltip[1]);
+                _$btnGoLive.click(function onGoLive() {
+                    _handleGoLiveCommand();
+                });
+                $(LiveDevelopment).on("statusChange", function statusChange(event, status, reason) {
+                    // status starts at -1 (error), so add one when looking up name and style
+                    // See the comments at the top of LiveDevelopment.js for details on the
+                    // various status codes.
+                    _setLabel(_$btnGoLive, null, _statusStyle[status + 1], _statusTooltip[status + 1]);
+                    _showStatusChangeReason(reason);
+                    if (config.autoconnect) {
+                        window.sessionStorage.setItem("live.enabled", status === 3);
+                    }
+                });
+
+                // Initialize tooltip for 'not connected' state
+                _setLabel(_$btnGoLive, null, _statusStyle[1], _statusTooltip[1]);
+            } else {
+                _$btnGoLive.click(function onGoLive() {
+                    _displayWindowsLiveDevelopmentError();
+                });
+                _setLabel(_$btnGoLive, null, _statusStyle[0], _statusTooltip[1]);
+            }
+        })
+
+
     }
-    
+
+    function _displayWindowsLiveDevelopmentError() {
+        Dialogs.showModalDialog(
+            DefaultDialogs.DIALOG_ID_INFO,
+            Strings.LIVE_DEVELOPMENT_OS_NOT_SUPPORTED_MESSAGE,
+            Strings.LIVE_DEVELOPMENT_OS_NOT_SUPPORTED_INFO_MESSAGE
+        )
+    }
+
     /** Maintains state of the Live Preview menu item */
     function _setupGoLiveMenu() {
         $(LiveDevelopment).on("statusChange", function statusChange(event, status) {

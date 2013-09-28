@@ -4,6 +4,7 @@ chrome.app.runtime.onLaunched.addListener(function (arg) {
             demoLoader.loadDemos().done(launchEditor).fail(function (error) {
                 console.error("There was a problem loading demos. It's likely that the application won't " +
                     "function properly. Starting anyway...", error);
+                launchEditor();
             })
         });
     });
@@ -31,7 +32,7 @@ function launchEditor() {
 
 function removeLocalData() {
     chrome.storage.local.clear();
-    require(["src/chrome/lib/filer"], function(Obj){
+    require(["src/chrome/lib/filer"], function(Obj) {
         var Filer = Obj.Filer;
         var filer = new Filer();
         var onErr = console.error.bind(console);
