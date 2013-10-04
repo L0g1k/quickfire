@@ -51,13 +51,25 @@ define(function (require, exports, module) {
 
         try {
             var existing = chromeStorageObj[ENTRY_KEY] || [];
-            existing.push(entryId);
-            chromeStorageObj[ENTRY_KEY] = existing;
+            var pruned = removeDuplicates(entryId, existing);
+            pruned.push(entryId);
+            chromeStorageObj[ENTRY_KEY] = pruned;
             chrome.storage.local.set(chromeStorageObj);
 
         } catch (e) {
             console.error('Entry storage not found', e.message);
         }
+    }
+
+    function removeDuplicates(entryId, entries) {
+        var newEntries = [];
+        var name = entryId.split(":")[1];
+        entries.forEach(function(entry){
+           if(entry.indexOf(":" + name) == -1) {
+               newEntries.push(entry);
+           }
+        });
+        return newEntries;
     }
 
     function getEntryReferences() {

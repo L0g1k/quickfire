@@ -5,8 +5,12 @@ define(function (require, exports, module) {
     "use strict";
 
     var AppInit = require("utils/AppInit"),
-    fs = require("chrome/fs");
+    fs = require("chrome/fs"),
+    stylesheetInjector = require("utils/StylesheetInjector")
 
+    AppInit.htmlReady(function(){
+        stylesheetInjector.inject(["chrome/css/menu-fix.css"]);
+    })
     function quit() {
         // unsupported
     }
@@ -26,10 +30,6 @@ define(function (require, exports, module) {
     function openLiveBrowser(url, enableRemoteDebugging, callback) {
         require(["preferences/PreferencesManager"], function(PreferencesManager){
             var config = PreferencesManager.getPreferenceStorage('com.brackets.preferences.global').getValue('chrome-web-server-port');
-            if(url.indexOf('src/LiveDevelopment/launch.html') != -1) {
-                url = brackets.chrome.interstitial;
-            }
-
             window.open("http://localhost:" + config.port + "/" + url);
             if (callback) {
                 callback();
