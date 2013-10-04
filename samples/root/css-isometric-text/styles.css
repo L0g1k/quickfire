@@ -1,0 +1,214 @@
+/* EMBED SILKSCREEN FONT */
+
+@font-face {
+	font-family: 'SilkscreenNormal';
+	src: url('slkscr-webfont.eot');
+	src: url('slkscr-webfont.eot?iefix') format('eot'),
+         url('slkscr-webfont.woff') format('woff'),
+         url('slkscr-webfont.ttf') format('truetype'),
+         url('slkscr-webfont.svg#webfontSiyPvkUH') format('svg');
+	font-weight: normal;
+	font-style: normal;
+}
+
+/* HTML5 CSS reset */
+
+html, body, div, span, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+abbr, address, cite, code,
+del, dfn, em, img, ins, kbd, q, samp,
+small, strong, sub, sup, var,
+b, i,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, figcaption, figure, 
+footer, header, hgroup, menu, nav, section, summary,
+time, mark, audio, video {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	outline: 0;
+	font-size: 100%;
+	vertical-align: baseline;
+	background: transparent;
+}
+
+article, aside, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section {
+	display: block;
+}
+
+nav ul {
+	list-style: none;
+}
+
+ul, menu {
+	list-style: none;
+}
+
+blockquote, q {
+	quotes: none;
+}
+
+blockquote:before, blockquote:after,
+q:before, q:after {
+	content: '';
+	content: none;
+}
+
+a {
+	margin: 0;
+	padding: 0;
+	font-size: 100%;
+	vertical-align: baseline;
+	background: transparent;
+}
+
+ins {
+	background-color: #ff9;
+	color: #000;
+	text-decoration: none;
+}
+
+mark {
+	background-color: #ff9;
+	color: #000;
+	font-style: italic;
+	font-weight: bold;
+}
+
+del {
+	text-decoration: line-through;
+}
+
+abbr[title], dfn[title] {
+	border-bottom: 1px dotted #666;
+	cursor: help;
+}
+
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+
+hr {
+	display: block;
+	height: 1px;
+	border: 0;
+	border-top: 1px solid #ccc;
+	margin: 1em 0;
+	padding: 0;
+}
+
+input, select {
+	vertical-align: middle;
+}
+
+/* PAGE STYLES */
+
+body {
+	color: #fff;
+	position: relative;
+	background: #444 url(grid.png) repeat 0 0;
+}
+
+#container {
+	background: url(blocks.png) no-repeat 112px 63px;
+	margin: 50px auto 0 auto;
+	height: 550px;
+}
+
+.skew1, .skew3 {
+	font: 60px/80px SilkscreenNormal;
+	line-height: 100px;
+	-webkit-transform: skewY(-26.6deg);
+	-moz-transform: skewY(-26.6deg);
+	-o-transform: skewY(-26.6deg);
+	text-shadow: -1px -1px 0px #999,
+	-2px -2px 0px #888,
+	-3px -3px 0px #777,
+	-4px -4px 0px #666,
+	-5px -5px 0px #555,
+	-5px -5px 0px #444,
+	-5px -5px 0px #333,
+	-5px -5px 5px #222;
+	position: absolute;
+	z-index: 100;
+}
+
+.skew1 {
+	top: 100px;
+	left: 80px;
+}
+
+.skew3 {
+	top: 170px;
+	left: 240px;
+}
+
+.skew2, .skew4 {
+	color: rgba(0,0,0,0);
+	font: 60px/80px SilkscreenNormal;
+	line-height: 100px;
+	-webkit-transform: skew(63deg,-26.6deg);
+	-moz-transform: skew(63deg,-26.6deg);
+	-o-transform: skew(63deg,-26.6deg);
+	text-shadow: 0 0 4px rgba(0,0,0,0.3);
+	position: absolute;
+	z-index: 50;
+}
+
+.skew2 {
+	top: 100px;
+	left: 40px;
+}
+
+.skew4 {
+	top: 170px;
+	left: 200px;
+}
+
+.text-block {
+	width: 360px;
+	height: 200px;
+	position: absolute;
+	top: 270px;
+	left: 490px;
+}
+
+.skew5 {
+	color: rgba(255,255,255,1);
+	font: 14px/18px SilkscreenNormal;
+	text-shadow: -2px 1px 2px #06136d,-3px 1px 2px #06136d;
+	text-align: center;
+	-webkit-transform: skew(63deg,-26.6deg);
+	-moz-transform: skew(63deg,-26.6deg);
+	-o-transform: skew(63deg,-26.6deg);
+	position: absolute;
+	z-index: 50;
+}
+
+footer {
+	bottom: 0;
+	position: absolute;
+	left: 600px;
+	font: 12px "Courier New", Courier, mono;
+	color: #c0c0c0;
+}
+
+footer p {
+	background-color: rgba(0,0,0,.4);
+	padding: 5px 10px;
+	-moz-border-radius: 15px;
+	border-radius: 15px;
+}
+
+footer a:link, footer a:visited {
+	color: #0098f8;
+	text-decoration: none;
+}
+
+footer a:hover, footer a:active {
+	color: #fff;
+}
