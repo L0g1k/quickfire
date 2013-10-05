@@ -5369,7 +5369,23 @@ a.badge:focus {
  * themeable part in "brackets_theme_default" as variables/mixins.
  *
  */
-/* Variable OVerride */
+/* Variable Overrides */
+/* Links */
+a {
+  color: #0083e8;
+  text-decoration: none;
+}
+a:hover {
+  color: #0083e8;
+  text-decoration: underline;
+}
+a:focus {
+  color: #0083e8;
+  outline: 0;
+  border-radius: 3px;
+  box-shadow: 0 0 0 2px #6fb5f1;
+  text-decoration: none;
+}
 .panel {
   display: -webkit-box;
   display: -moz-box;
@@ -5651,6 +5667,7 @@ body.has-appshell-menus #titlebar {
 .codehint-menu .dropdown-menu .divider {
   background-color: #eaeaea;
   border: 0;
+  margin: 5px 1px;
 }
 .toolbar .nav .menu-shortcut,
 .context-menu .menu-shortcut,
@@ -5713,7 +5730,7 @@ body.has-appshell-menus #titlebar {
 }
 .modal .close {
   cursor: default;
-  margin: 10px 5px 0 0;
+  margin: 7px 5px 0 0;
 }
 .modal-header {
   background: #ffffff;
@@ -5733,6 +5750,7 @@ body.has-appshell-menus #titlebar {
   background-color: #ffffff;
   border-top: 1px solid #c3c6c5;
   box-shadow: none;
+  padding: 10px 15px 12px;
   white-space: nowrap;
 }
 .modal-footer .btn {
@@ -5778,33 +5796,38 @@ body.has-appshell-menus #titlebar {
   color: #000000;
   margin-bottom: 0;
   margin-top: 0;
-  font-size: 26px;
-  line-height: 40px;
-  font-weight: 200;
+  font-size: 22px;
+  line-height: 30px;
+  font-weight: normal;
 }
 .dialog-message {
-  color: #000000;
+  color: #454545;
   font-size: 14px;
   line-height: 20px;
   margin-bottom: 20px;
-  font-weight: 200;
-}
-body.platform-win .dialog-message {
   font-weight: normal;
-  color: #2e2e2e;
 }
 .dialog-message li {
-  line-height: 26px;
+  line-height: 20px;
   color: #000000;
+  padding: 0 0 5px;
 }
 .dialog-message select {
   margin-left: 10px;
 }
+.dialog-list {
+  list-style: none;
+  margin: 5px 0 20px 10px;
+}
+.dialog-list > li:before {
+  content: "•  ";
+  color: #9c9e9e;
+  font-size: 1.5em;
+  position: relative;
+  top: 1px;
+}
 .dialog-filename {
   word-wrap: break-word;
-  font-weight: normal;
-}
-body.platform-win .dialog-filename {
   font-weight: 500;
 }
 /* Any Dialog text in this style is automatically turned into a link that opens in the browser. Use href for the link's target. */
@@ -5993,10 +6016,10 @@ a[href^="http"] {
   width: 220px;
 }
 .extension-manager-dialog .modal-body .extension-list .ext-name {
+  color: #454545;
   display: block;
-  color: #000;
   font-size: 15px;
-  font-weight: 200;
+  font-weight: normal;
   -webkit-user-select: text;
   -khtml-user-select: text;
   -moz-user-select: text;
@@ -6004,15 +6027,11 @@ a[href^="http"] {
   -o-user-select: text;
   user-select: text;
   cursor: text;
-}
-body.platform-win .extension-manager-dialog .modal-body .extension-list .ext-name {
-  font-weight: normal;
-  color: #2e2e2e;
 }
 .extension-manager-dialog .modal-body .extension-list .ext-desc {
-  color: #000;
-  font-weight: 200;
   width: auto;
+  color: #454545;
+  font-weight: normal;
   -webkit-user-select: text;
   -khtml-user-select: text;
   -moz-user-select: text;
@@ -6020,10 +6039,6 @@ body.platform-win .extension-manager-dialog .modal-body .extension-list .ext-nam
   -o-user-select: text;
   user-select: text;
   cursor: text;
-}
-body.platform-win .extension-manager-dialog .modal-body .extension-list .ext-desc {
-  font-weight: normal;
-  color: #2e2e2e;
 }
 .extension-manager-dialog .modal-body .extension-list .muted {
   color: #888;
@@ -6036,6 +6051,9 @@ body.platform-win .extension-manager-dialog .modal-body .extension-list .ext-des
 .extension-manager-dialog .modal-body .extension-list .ext-date,
 .extension-manager-dialog .modal-body .extension-list .ext-author {
   font-size: 11px;
+}
+.extension-manager-dialog .modal-body .extension-list .ext-author {
+  display: block;
 }
 .extension-manager-dialog .modal-body .extension-list .ext-action {
   font-size: 12px;
@@ -6097,10 +6115,6 @@ body.platform-win .extension-manager-dialog .modal-body .extension-list .ext-des
   -o-user-select: text;
   user-select: text;
 }
-body.platform-win .about-dialog .modal-body .dialog-message {
-  font-weight: normal;
-  color: #2e2e2e;
-}
 /* Input */
 textarea,
 input[type="text"],
@@ -6120,8 +6134,10 @@ input[type="color"],
 .uneditable-input {
   background-color: #ffffff;
   border: 1px solid #9c9e9e;
-  color: #454545;
+  color: #000000;
   font-size: 14px;
+  font-weight: normal;
+  -webkit-font-smoothing: antialiased;
   -webkit-border-radius: 3px;
   -moz-border-radius: 3px;
   border-radius: 3px;
@@ -6171,7 +6187,6 @@ input[type="color"]:focus,
 .uneditable-input:focus {
   outline: 0;
   background-color: #ffffff;
-  color: #454545;
   text-shadow: none;
   border: 1px solid #0940fd;
   box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.12), 0 0 0 2px #6fb5f1;
@@ -6620,7 +6635,7 @@ input[type="checkbox"]:checked:before {
 }
 .cm-s-default span.CodeMirror-matchingbracket {
   color: #222222 !important;
-  background-color: #b0e3b6;
+  background-color: #cfead6;
 }
 .cm-s-default span.CodeMirror-nonmatchingbracket {
   color: #222222 !important;
@@ -6694,7 +6709,7 @@ input[type="checkbox"]:checked:before {
 .CodeMirror .CodeMirror span.CodeMirror-matchingbracket {
   /* Ensure visibility against gray inline editor background */
 
-  background-color: #b0e3b6;
+  background-color: #cfead6;
   color: #222222 !important;
 }
 .CodeMirror .CodeMirror .CodeMirror-cursor {
@@ -6736,8 +6751,7 @@ input[type="checkbox"]:checked:before {
   background: #dde4e4;
 }
 .CodeMirror .CodeMirror-matchingtag {
-  background: #b0e3b6;
-  color: #222222 !important;
+  background: #cfead6;
 }
 /*
  * Temporarily override bold and italic syntax highlighting until
@@ -7145,7 +7159,7 @@ img {
   border-bottom: 1px solid rgba(0, 0, 0, 0.12);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
   position: relative;
-  z-index: 16;
+  z-index: 17;
 }
 .busyCursor {
   cursor: wait !important;
@@ -7730,12 +7744,15 @@ img {
   list-style: none;
 }
 .related-container .related li {
-  color: #8a8a8a;
+  color: #333333;
   margin: 0;
   overflow: hidden;
   padding: 2px 0px 2px 15px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.related-container .related li .related-file {
+  color: #888888;
 }
 .related-container .related .selected {
   color: #000000;
@@ -7853,19 +7870,6 @@ img {
   background-position: 7px 5px;
 }
 /* Modal bar for Find/Quick Open */
-.modal-bar.modal-bar-hide {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  -webkit-transform: translate(0, -44px);
-  transform: translate(0, -44px);
-  transition: -webkit-transform 266ms cubic-bezier(0, 0.56, 0, 1);
-  transition: transform 266ms cubic-bezier(0, 0.56, 0, 1);
-}
-body:not(.has-appshell-menus) .modal-bar.modal-bar-hide {
-  top: 37px;
-}
 .modal-bar {
   display: block;
   text-align: left;
@@ -7877,11 +7881,26 @@ body:not(.has-appshell-menus) .modal-bar.modal-bar-hide {
   padding: 5px 4px 4px 14px;
   -webkit-transform: translate(0, 0);
   transition: -webkit-transform 66ms cubic-bezier(0, 0.62, 0.04, 0.99);
-  z-index: 15;
+  z-index: 16;
 }
 body.in-browser .modal-bar,
 body:not(.has-appshell-menus) .modal-bar {
   border-top: 1px solid #dfdfdf;
+}
+.modal-bar.popout {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+}
+.modal-bar.offscreen {
+  -webkit-transform: translate(0, -44px);
+  transform: translate(0, -44px);
+  transition: -webkit-transform 266ms cubic-bezier(0, 0.56, 0, 1);
+  transition: transform 266ms cubic-bezier(0, 0.56, 0, 1);
+}
+body:not(.has-appshell-menus) .modal-bar.offscreen {
+  top: 37px;
 }
 .modal-bar input {
   font-family: 'SourceSansPro', Helvetica, Arial, "Meiryo UI", "ＭＳ Ｐゴシック", "MS PGothic", sans-serif;
@@ -7913,10 +7932,14 @@ body:not(.has-appshell-menus) .modal-bar {
 }
 .CodeMirror-searching {
   background-color: rgba(244, 237, 98, 0.7);
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  color: #121212 !important;
 }
 .CodeMirror.find-highlighting div.CodeMirror-selected,
 .CodeMirror .CodeMirror.find-highlighting div.CodeMirror-selected {
   background: #ff6c00;
+  border-radius: 2px;
 }
 #find-counter {
   font-weight: 500;

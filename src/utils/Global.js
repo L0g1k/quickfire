@@ -34,8 +34,15 @@
 define(function (require, exports, module) {
     "use strict";
     
-    var configJSON = require("text!config.json");
-
+    var configJSON  = require("text!config.json"),
+        UrlParams   = require("utils/UrlParams").UrlParams;
+    
+    var params          = new UrlParams(),
+        hasNativeMenus  = "";
+    
+    // read URL params
+    params.parse();
+    
     // Define core brackets namespace if it isn't already defined
     //
     // We can't simply do 'brackets = {}' to define it in the global namespace because
@@ -76,11 +83,15 @@ define(function (require, exports, module) {
     }
     
     global.brackets.inBrowser = !global.brackets.hasOwnProperty("fs");
-
     global.brackets.chromeApp = chrome && chrome.app && chrome.app.runtime;
     global.brackets.chrome = { interstitial: '__launch__.html', extensionInstallURL: "https://chrome.google.com/webstore/detail/quickfire-for-for-chrome/paoopjjblcebddifekcalpddjekpbipn" };
-
-    global.brackets.nativeMenus = (!global.brackets.inBrowser && (global.brackets.platform !== "linux"));
+    hasNativeMenus = params.get("hasNativeMenus");
+    
+    if (hasNativeMenus) {
+        global.brackets.nativeMenus = (hasNativeMenus === "true");
+    } else {
+        global.brackets.nativeMenus = (!global.brackets.inBrowser && (global.brackets.platform !== "linux"));
+    }
     
     global.brackets.isLocaleDefault = function () {
         return !global.localStorage.getItem("locale");

@@ -75,6 +75,8 @@ define(function LiveDevelopment(require, exports, module) {
     var STATUS_SYNC_ERROR     = exports.STATUS_SYNC_ERROR     =  5;
 
     var Async                = require("utils/Async"),
+        CollectionUtils      = require("utils/CollectionUtils"),
+        FileIndexManager     = require("project/FileIndexManager"),
         Dialogs              = require("widgets/Dialogs"),
         DefaultDialogs       = require("widgets/DefaultDialogs"),
         DocumentManager      = require("document/DocumentManager"),
@@ -565,11 +567,10 @@ define(function LiveDevelopment(require, exports, module) {
         allAgentsPromise = Async.withTimeout(allAgentsPromise, 10000);
 
         allAgentsPromise.done(function () {
-            var doc = _getCurrentDocument();
             // After (1) the interstitial page loads, (2) then browser navigation
             // to the base URL is completed, and (3) the agents finish loading
             // gather related documents and finally set status to STATUS_ACTIVE.
-            console.debug("All agents promise resolved");
+            var doc = _getCurrentDocument();  // TODO: probably wrong...
 
             if (doc) {
                 var status = STATUS_ACTIVE,
@@ -589,12 +590,8 @@ define(function LiveDevelopment(require, exports, module) {
 
                         result.resolve();
                     })
-                    .fail(function(){
-                        console.error("Related documents promise failed");
-                        result.reject();
-                    });
+                    .fail(result.reject);
             } else {
-                console.error("Doc was null");
                 result.reject();
             }
         });
@@ -606,7 +603,6 @@ define(function LiveDevelopment(require, exports, module) {
         
         // show error loading live dev dialog
         result.fail(function () {
-            console.debug("Agents failed to all load. Agents that did load:", _loadedAgentNames);
             _setStatus(STATUS_ERROR);
 
             Dialogs.showModalDialog(
@@ -618,6 +614,124 @@ define(function LiveDevelopment(require, exports, module) {
 
         // resolve/reject the open() promise after agents complete
         result.then(_openDeferred.resolve, _openDeferred.reject);
+
+        return result.promise();
+    }
+
+    /**
+     * @private
+     * Determine an index file that can be used to start Live Development.
+     * This function will inspect all files in a project to find the closest index file
+     * available for currently opened document. We are searching for these files:
+     *  - index.html
+     *  - index.htm
+     * 
+     * If the project is configured with a custom base url for live developmment, then
+     * the list of possible index files is extended to contain these index files too:
+     *  - index.php
+     *  - index.php3
+     *  - index.php4
+     *  - index.php5
+     *  - index.phtm
+     *  - index.phtml
+     *  - index.cfm
+     *  - index.cfml
+     *  - index.asp
+     *  - index.aspx
+     *  - index.jsp
+     *  - index.jspx
+     *  - index.shm
+     *  - index.shml
+     * 
+     * If a file was found, the promise will be resolved with the full path to this file. If no file
+     * was found in the whole project tree, the promise will be resolved with null.
+     * 
+     * @return {jQuery.Promise} A promise that is resolved with a full path
+     * to a file if one could been determined, or null if there was no suitable index
+     * file.
+     */
+    function _getInitialDocFromCurrent() {
+        var doc = _getCurrentDocument(),
+            refPath,
+            i;
+
+        // TODO: FileUtils.getParentFolder()
+        function getParentFolder(path) {
+            return path.substring(0, path.lastIndexOf('/', path.length - 2) + 1);
+        }
+
+        function getFilenameWithoutExtension(filename) {
+            var index = filename.lastIndexOf(".");
+            return index === -1 ? filename : filename.slice(0, index);
+        }
+
+        // Is the currently opened document already a file we can use for Live Development?
+        if (doc) {
+            refPath = doc.file.fullPath;
+            if (FileUtils.isStaticHtmlFileExt(refPath) || FileUtils.isServerHtmlFileExt(refPath)) {
+                return new $.Deferred().resolve(doc);
+            }
+        }
+
+        var result = new $.Deferred();
+
+        var baseUrl = ProjectManager.getBaseUrl(),
+            hasOwnServerForLiveDevelopment = (baseUrl && baseUrl.length);
+
+        FileIndexManager.getFileInfoList("all").done(function (allFiles) {
+            if (refPath) {
+                var projectRoot = ProjectManager.getProjectRoot().fullPath,
+                    containingFolder = FileUtils.getDirectoryPath(refPath),
+                    indexFileFound = false,
+                    stillInProjectTree = true;
+
+                var filteredFiltered = allFiles.filter(function (item) {
+                    var parent = getParentFolder(item.fullPath);
+                    
+                    return (containingFolder.indexOf(parent) === 0);
+                });
+                
+                var filterIndexFile = function (fileInfo) {
+                    if (fileInfo.fullPath.indexOf(containingFolder) === 0) {
+                        if (getFilenameWithoutExtension(fileInfo.name) === "index") {
+                            if (hasOwnServerForLiveDevelopment) {
+                                if ((FileUtils.isServerHtmlFileExt(fileInfo.name)) ||
+                                        (FileUtils.isStaticHtmlFileExt(fileInfo.name))) {
+                                    return true;
+                                }
+                            } else if (FileUtils.isStaticHtmlFileExt(fileInfo.name)) {
+                                return true;
+                            }
+                        } else {
+                            return false;
+                        }
+                    }
+                };
+
+                while (!indexFileFound && stillInProjectTree) {
+                    i = CollectionUtils.indexOf(filteredFiltered, filterIndexFile);
+
+                    // We found no good match
+                    if (i === -1) {
+                        // traverse the directory tree up one level
+                        containingFolder = getParentFolder(containingFolder);
+                        // Are we still inside the project?
+                        if (containingFolder.indexOf(projectRoot) === -1) {
+                            stillInProjectTree = false;
+                        }
+                    } else {
+                        indexFileFound = true;
+                    }
+                }
+
+                if (i !== -1) {
+                    DocumentManager.getDocumentForPath(filteredFiltered[i].fullPath).then(result.resolve, result.resolve);
+                    return;
+                }
+            }
+
+            result.resolve(null);
+        });
 
         return result.promise();
     }
@@ -822,28 +936,26 @@ define(function LiveDevelopment(require, exports, module) {
     function _onInterstitialPageLoad() {
         // Domains for some agents must be enabled first before loading
         var enablePromise = Inspector.Page.enable().then(_enableAgents);
-        console.debug("Interstitial page loaded");
+        
         enablePromise.done(function () {
-
-
             // Some agents (e.g. DOMAgent and RemoteAgent) require us to
             // navigate to the page first before loading can complete.
             // To accomodate this, we load all agents and navigate in
             // parallel.
             loadAgents();
 
-            var doc = _getCurrentDocument();
-            console.debug("Page enabled", doc);
-            if (doc) {
-                // Navigate from interstitial to the document
-                // Fires a frameNavigated event
-                Inspector.Page.navigate(doc.url);
-            } else {
-                // Unlikely that we would get to this state where
-                // a connection is in process but there is no current
-                // document
-                close();
-            }
+            _getInitialDocFromCurrent().done(function (doc) {
+                if (doc) {
+                    // Navigate from interstitial to the document
+                    // Fires a frameNavigated event
+                    Inspector.Page.navigate(doc.url);
+                } else {
+                    // Unlikely that we would get to this state where
+                    // a connection is in process but there is no current
+                    // document
+                    close();
+                }
+            });
         });
     }
     
@@ -891,7 +1003,7 @@ define(function LiveDevelopment(require, exports, module) {
             retryCount      = 0;
         
         // Open the live browser if the connection fails, retry 6 times
-        Inspector.connectToURL("chrome-developer-tools-extension-bootstrap/src/background.html").fail(function onConnectFail(err) {
+        Inspector.connectToURL(launcherUrl).fail(function onConnectFail(err) {
             if (err === "CANCEL") {
                 _openDeferred.reject(err);
                 return;
@@ -921,13 +1033,13 @@ define(function LiveDevelopment(require, exports, module) {
                 dialogPromise.done(function (id) {
                     if (id === Dialogs.DIALOG_BTN_OK) {
                         // User has chosen to reload Chrome, quit the running instance
-                        /*_setStatus(STATUS_INACTIVE);
+                        _setStatus(STATUS_INACTIVE);
                         NativeApp.closeLiveBrowser()
                             .done(function () {
                                 browserStarted = false;
                                 window.setTimeout(function () {
                                     // After browser closes, try to open the interstitial page again
-                                    ();
+                                    _openInterstitialPage();
                                 });
                             })
                             .fail(function (err) {
@@ -935,8 +1047,7 @@ define(function LiveDevelopment(require, exports, module) {
                                 _setStatus(STATUS_ERROR);
                                 browserStarted = false;
                                 _openDeferred.reject("CLOSE_LIVE_BROWSER");
-                            });*/
-                        NativeApp.openURLInDefaultBrowser(brackets.chrome.extensionInstallURL)
+                            });
                     } else {
                         _openDeferred.reject("CANCEL");
                     }
@@ -989,12 +1100,13 @@ define(function LiveDevelopment(require, exports, module) {
     
     // helper function that actually does the launch once we are sure we have
     // a doc and the server for that doc is up and running.
-    function _doLaunchAfterServerReady() {
+    function _doLaunchAfterServerReady(initialDoc) {
         // update status
         _setStatus(STATUS_CONNECTING);
         
         // create live document
-        _liveDocument = _createDocument(_getCurrentDocument(), EditorManager.getCurrentFullEditor());
+        initialDoc._ensureMasterEditor();
+        _liveDocument = _createDocument(initialDoc, initialDoc._masterEditor);
 
         // start listening for requests
         _server.add(_liveDocument);
@@ -1004,39 +1116,7 @@ define(function LiveDevelopment(require, exports, module) {
         $(Inspector).one("connect", _onConnect);
         
         // open browser to the interstitial page to prepare for loading agents
-        openDocument();//_openInterstitialPage();
-    }
-
-    function openDocument() {
-        Inspector.connectToURL().fail(function onConnectFail(err) {
-            _setStatus(STATUS_ERROR);
-
-            var dialogPromise = Dialogs.showModalDialog(
-                DefaultDialogs.DIALOG_ID_LIVE_DEVELOPMENT,
-                Strings.LIVE_DEVELOPMENT_RELAUNCH_TITLE,
-                Strings.LIVE_DEVELOPMENT_ERROR_MESSAGE,
-                [
-                    {
-                        className: Dialogs.DIALOG_BTN_CLASS_LEFT,
-                        id:        Dialogs.DIALOG_BTN_CANCEL,
-                        text:      Strings.CANCEL
-                    },
-                    {
-                        className: Dialogs.DIALOG_BTN_CLASS_PRIMARY,
-                        id:        Dialogs.DIALOG_BTN_OK,
-                        text:      Strings.RELAUNCH_CHROME
-                    }
-                ]
-            );
-
-            dialogPromise.done(function (id) {
-                if (id === Dialogs.DIALOG_BTN_OK) {
-                    NativeApp.openURLInDefaultBrowser(brackets.chrome.extensionInstallURL)
-                } else {
-                    _openDeferred.reject("CANCEL");
-                }
-            });
-        });
+        _openInterstitialPage();
     }
     
     function _prepareServer(doc) {
@@ -1084,15 +1164,25 @@ define(function LiveDevelopment(require, exports, module) {
     /** Open the Connection and go live */
     function open() {
         _openDeferred = new $.Deferred();
-
-        var doc = _getCurrentDocument(),
-            prepareServerPromise = (doc && _prepareServer(doc)) || new $.Deferred().reject();
         
-        // wait for server (StaticServer, Base URL or file:)
-        prepareServerPromise.done(_doLaunchAfterServerReady);
-        prepareServerPromise.fail(function () {
-            _showWrongDocError();
-            _openDeferred.reject();
+        // TODO: need to run _onDocumentChange() after load if doc != currentDocument here? Maybe not, since activeEditorChange
+        // doesn't trigger it, while inline editors can still cause edits in doc other than currentDoc...
+        _getInitialDocFromCurrent().done(function (doc) {
+            var prepareServerPromise = (doc && _prepareServer(doc)) || new $.Deferred().reject();
+
+            if (doc && !doc._masterEditor) {
+                DocumentManager.addToWorkingSet(doc.file);
+            }
+
+            // wait for server (StaticServer, Base URL or file:)
+            prepareServerPromise
+                .done(function () {
+                    _doLaunchAfterServerReady(doc);
+                })
+                .fail(function () {
+                    _showWrongDocError();
+                    _openDeferred.reject();
+                });
         });
 
         return _openDeferred.promise();
@@ -1225,8 +1315,9 @@ define(function LiveDevelopment(require, exports, module) {
     }
 
     // For unit testing
-    exports.launcherUrl         = launcherUrl;
-    exports._getServer          = _getServer;
+    exports.launcherUrl               = launcherUrl;
+    exports._getServer                = _getServer;
+    exports._getInitialDocFromCurrent = _getInitialDocFromCurrent;
 
     // Export public functions
     exports.agents              = agents;

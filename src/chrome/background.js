@@ -13,7 +13,7 @@ chrome.app.runtime.onLaunched.addListener(function (arg) {
 
 function launchEditor() {
     chrome.app.window.create(
-        'src/index.html',
+        'src/index.html?hasNativeMenus=false',
 
         {
             bounds: {
