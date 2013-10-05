@@ -1,0 +1,330 @@
+/*
+Copyright David Corvoysier 2013
+http://www.kaizou.org/
+*/
+
+/* Fonts */
+@font-face {
+	font-family: "Soviet";
+	src: url("/fonts/Soviet2.ttf") format("truetype");
+}
+
+/**********************************************************************/
+/*                            Document                                */
+/**********************************************************************/
+html {
+	overflow-y: scroll;
+}
+
+body { 
+	background-color: lightgrey;
+	margin: 0%;
+    font-family: 'Open Sans', sans-serif;
+	min-width: 800px;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:link, a:hover, a:visited {
+    color: #508B88;
+}
+
+/**********************************************************************/
+/*                              Banner                                */
+/**********************************************************************/
+header[role=banner] {
+	font: 56px 'Soviet', 'Trebuchet MS', 'Helvetica Neue', Arial, Sans-serif;
+	color: black;
+	top: 0px;
+	width: 100%;
+	background: -webkit-gradient(linear, left top, left bottom, from(darkorange), to(red));
+	background: -moz-linear-gradient(top, #FF0000, #FF8C00);
+	background: -o-linear-gradient(top, #FF0000, #FF8C00);
+	background: -ms-linear-gradient(top, #FF0000, #FF8C00);
+	background: linear-gradient(top, #FF0000, #FF8C00);
+	text-align: center;
+	z-index:1;
+	margin: 0px;
+}
+
+header[role=banner] h1{
+	-webkit-margin-before: 0em;
+	-webkit-margin-after: 0em;
+	-webkit-margin-start: 0px;
+	-webkit-margin-end: 0px;
+	-moz-margin-before: 0em;
+	-moz-margin-after: 0em;
+	-moz-margin-start: 0px;
+	-moz-margin-end: 0px;
+}
+
+header[role=banner] ul{
+	display: inline-block;
+	padding-top: 20px;
+	margin: 0px;
+	list-style: none;
+	list-style-image: none;
+	-webkit-margin-before: 0em;
+	-webkit-margin-after: 0em;
+	-webkit-margin-start: 0px;
+	-webkit-margin-end: 0px;
+	-webkit-padding-start: 0px;
+	-moz-margin-before: 0em;
+	-moz-margin-after: 0em;
+	-moz-margin-start: 0px;
+	-moz-margin-end: 0px;
+	-moz-padding-start: 0px;
+	border-spacing: 0em;
+	background-image: url('/images/kaizou.svg');
+	background-size: 76px;
+	background-repeat: no-repeat;
+	background-position: left;
+}
+
+header[role=banner] ul li:first-child {
+	padding-left: 100px;
+}
+
+header[role=banner] ul li {
+	display: table-cell;
+	padding-left: 20px;
+	padding-bottom: 0px;
+}
+
+header[role=banner] a{
+	color: black;
+}
+
+header[role=banner] fieldset{
+	border: none;
+	display: inherit;
+}
+
+.logo {
+    width: 76px;
+    height: 78px;
+}
+
+/* Table of Contents */
+.toc {
+    display:none;
+}
+
+/*
+.toc {
+    float: right;
+    border-radius: 10px;
+    box-shadow: 5px 5px 5px #999;
+    max-width: 30em;
+    border: 1px solid #999999;
+    padding-right: 1em;
+}
+
+    .toc h1 {
+        text-align: center;
+        font-size: 100%;
+    }
+*/
+/**********************************************************************/
+/*                             Content                                */
+/**********************************************************************/
+#content {
+    margin: 0px auto;
+	color: #666;
+    background-color: white;
+    text-rendering: optimizeLegibility;
+    -webkit-box-shadow: black 0px 3px 10px;
+    -moz-box-shadow: black 0px 3px 10px;
+    box-shadow: black 0px 3px 10px;
+}
+
+#content h1 {
+    margin-top: 0.3em;
+    margin-bottom: 0.3em;
+	font-size: 1.7em;
+	font-family: HelveticaNeue-condensed, sans-serif;
+	font-weight: 500;
+}
+
+#content h2 {
+	font-size: 1.5em;
+    margin-top: 0.3em;
+    margin-bottom: 0.3em;
+}
+
+#second-col {
+    font-size: 80%;
+    padding: 1em;
+}
+
+#demo {
+    padding: 1em;
+}
+
+@media only screen and (max-width: 1200px) {
+    #content {
+        width: 800px;
+    }
+    #first-col {
+        padding: 1em;
+    }
+    #first-col article {
+        margin: 0px auto;
+        width: 45em;
+    }
+    #second-col .tuple {
+        border-spacing: 1em 0.5em;
+        table-layout: fixed;
+    }
+    #second-col article {
+        display: table-cell;
+    }
+}
+
+@media only screen and (min-width: 1201px) and (max-width: 1600px) {
+    #content {
+        width: 1200px;
+        border-spacing: 1em 0.5em;
+    }
+    #first-col {
+        display: table-cell;
+        width: 800px;
+    }
+    #first-col article {
+        margin: 0px auto;
+        width: 45em;
+    }
+    #second-col {
+        display: table-cell;
+        width: 400px;
+    }
+    #second-col article {
+        margin-bottom: 1em;
+    }
+}
+
+@media only screen and (min-width: 1600px) {
+    #content {
+        width: 1600px;
+        border-spacing: 1em 0.7em;
+    }
+    #first-col {
+        display: table-cell;
+    }
+    #first-col article {
+        margin: 0px auto;
+        width: 45em;
+    }
+    #second-col {
+        display: table-cell;
+        width: 800px;
+    }
+    #second-col .tuple {
+        border-spacing: 1em 0.5em;
+        table-layout: fixed;
+    }
+    #second-col article {
+        display: table-cell;
+    }
+}
+
+article {
+	max-width: 45em;
+    padding: 1em;
+    border: 1px solid #DFDFDF;
+}
+
+article p {
+    text-align: justify;
+}
+
+article > header {
+}
+
+article p code, article ul code {
+    background: #f8f8ff;
+    border: 1px solid #dedede;
+    padding: 0 0.2em;
+}
+
+/* Posts */
+
+ol#posts {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.picture {
+    text-align: center;
+}
+
+.picture img {
+	width: 90%;
+    border: 1px solid;
+}
+
+.legend {
+	font-size: 0.7em;
+}
+
+/* Jekyll pagination */
+#pagination {
+	list-style: none;
+    -moz-padding-start: 0px;
+    -webkit-padding-start: 0px;
+    height: 20px;
+}
+
+#pagination li {
+	float: left;
+    width: 33.3%;
+}
+#pagination .previous {
+	text-align: left;
+}
+#pagination .page_number {
+	text-align: center;
+    margin-right: auto;
+}
+#pagination .next {
+	text-align: right;
+}
+
+/**********************************************************************/
+/*                              Footer                                */
+/**********************************************************************/
+footer[role=contentinfo] {
+	text-align: center;
+	background: -webkit-gradient(linear, left top, left bottom, from(red), to(darkorange));
+	background: linear-gradient(top, #FF8C00, #FF0000);
+	background: -moz-linear-gradient(top, #FF8C00, #FF0000);
+	background: -o-linear-gradient(top, #FF8C00, #FF0000);
+	background: -ms-linear-gradient(top, #FF8C00, #FF0000);
+	padding: 1em;
+}
+    footer[role=contentinfo] > ul {
+        -moz-padding-start: 0px;
+        -webkit-padding-start: 0px;
+        list-style: none;
+        margin-left: 0px;
+        margin-right: 0px;
+    }
+    
+    footer[role=contentinfo] > ul > li {
+        display: inline-block;
+        width: 150px;
+        vertical-align: middle;
+    }
+
+.gh-ribbon {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 149px;
+    height: 149px;
+    border: 0;
+    background-image: url("https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png");
+}

@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>Light Orb</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+<link href='http://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+		<style>
+			*{ box-sizing: border-box; margin: 0; padding: 0 }
+			body {
+				color: #ffffff;
+				font-family: 'open sans', sans-serif;
+				font-size:13px;
+				background-color: #000;
+				margin: 0px;
+				overflow: hidden;
+			}
+			#container{
+				position: absolute; left: 0; top: 0; right: 0; bottom: 0; width: 100%; height: 100%;
+			}
+			#cover{
+				position: absolute; left: 0; top: 0; right: 0; bottom: 0; width: 100%; height: 100%; background-color: #000; 
+			}
+			#cover {
+				-webkit-transition: opacity 2s ease-out; pointer-events: none;
+				-moz-transition: opacity 2s ease-out; pointer-events: none;
+				-ms-transition: opacity 2s ease-out; pointer-events: none;
+				-o-transition: opacity 2s ease-out; pointer-events: none;
+				transition: opacity 2s ease-out; pointer-events: none;
+			}
+			#text{position: absolute; left: 20px; top: 20px; width: 400px; text-shadow: 0 1px 0 rgba( 0,0,0,.8 ); background-color: rgba( 0,0,0,.4 ); padding: 20px; border-radius: 5px }
+			a{color: white; text-decoration: none; border-bottom: 1px solid rgba( 255,255,255,.2 ) }
+			a:hover{ border-bottom: 1px solid white }
+			h1{margin-bottom: .15em }
+			p{ margin-bottom: 1em }
+			.instructions{ color: #dfffd0 }
+		</style>
+
+</head>
+	<body>
+
+		<div id="container"></div>
+		<div id="cover" ></div>
+		<div id="text">
+			<h1>Light Orb</h1>
+			<p>Back to <a href="http://www.clicktorelease.com/blog/light-orb-the-nexus-q-series" ><b>the whole series</b></a>.<br/>
+			Code tinkering <a href="https://twitter.com/thespite" rel="external" >@thespite</a> · 3D plumbing <a href="https://twitter.com/zafio" rel="external" >@zafio</a></p>
+			<p class="instructions">Use <b>WASD</b> to move the camera around the Orb and <b>space</b> to throw it in the line of the camera.</p>
+			<p><a href="#" id="fullscreeBtn" >Go fullscreen</a> | <b>Too slow?</b> <a href="http://www.clicktorelease.com/code/orb/orb_low.html" >Try the light version</a></p>
+			<g:plusone width="280"></g:plusone>
+			<script type="text/javascript">
+			  (function() {
+				var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+				po.src = 'https://apis.google.com/js/plusone.js';
+				var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+			  })();
+			</script><br/>
+			<a href="http://twitter.com/share" class="twitter-share-button" data-count="horizontal" data-via="thespite">Tweet</a><script type="text/javascript" src="../../../platform.twitter.com/widgets.js"></script>
+		</div>
+<script src="js/Three.js"></script>
+<script src="js/Detector.js"></script>
+<script src="js/Stats.js"></script>
+<script src="js/physi.js"></script>
+<script src="js/PortalControls.js"></script>
+
+<script type="x-shader/x-vertex" id="vertexShader">
+		
+varying vec2 vUv;
+varying vec3 vReflect;
+varying vec3 vNormal;
+
+void main() {
+	
+	vUv = uv;
+	vec4 mPosition = objectMatrix * vec4( position, 1.0 );
+	vec3 nWorld = normalize( mat3( objectMatrix[0].xyz, objectMatrix[1].xyz, objectMatrix[2].xyz ) * normal );
+	vNormal = normalMatrix * normal;
+	vReflect = normalize( reflect( normalize( mPosition.xyz - cameraPosition ), nWorld ) );
+	gl_Position = projectionMatrix * viewMatrix * mPosition;
+	
+}
+
+</script>
+
+<script type="x-shader/x-vertex" id="fragmentShader">
+
+	
+//
+// GLSL textureless classic 3D noise "cnoise",
+// with an RSL-style periodic variant "pnoise".
+// Author:  Stefan Gustavson (stefan.gustavson@liu.se)
+// Version: 2011-10-11
+//
+// Many thanks to Ian McEwan of Ashima Arts for the
+// ideas for permutation and gradient selection.
+//
+// Copyright (c) 2011 Stefan Gustavson. All rights reserved.
+// Distributed under the MIT license. See LICENSE file.
+// https://github.com/ashima/webgl-noise
+//
+
+vec3 mod289(vec3 x)
+{
+  return x - floor(x * (1.0 / 289.0)) * 289.0;
+}
+
+vec4 mod289(vec4 x)
+{
+  return x - floor(x * (1.0 / 289.0)) * 289.0;
+}
+
+vec4 permute(vec4 x)
+{
+  return mod289(((x*34.0)+1.0)*x);
+}
+
+vec4 taylorInvSqrt(vec4 r)
+{
+  return 1.79284291400159 - 0.85373472095314 * r;
+}
+
+vec3 fade(vec3 t) {
+  return t*t*t*(t*(t*6.0-15.0)+10.0);
+}
+
+// Classic Perlin noise
+float cnoise(vec3 P)
+{
+  vec3 Pi0 = floor(P); // Integer part for indexing
+  vec3 Pi1 = Pi0 + vec3(1.0); // Integer part + 1
+  Pi0 = mod289(Pi0);
+  Pi1 = mod289(Pi1);
+  vec3 Pf0 = fract(P); // Fractional part for interpolation
+  vec3 Pf1 = Pf0 - vec3(1.0); // Fractional part - 1.0
+  vec4 ix = vec4(Pi0.x, Pi1.x, Pi0.x, Pi1.x);
+  vec4 iy = vec4(Pi0.yy, Pi1.yy);
+  vec4 iz0 = Pi0.zzzz;
+  vec4 iz1 = Pi1.zzzz;
+
+  vec4 ixy = permute(permute(ix) + iy);
+  vec4 ixy0 = permute(ixy + iz0);
+  vec4 ixy1 = permute(ixy + iz1);
+
+  vec4 gx0 = ixy0 * (1.0 / 7.0);
+  vec4 gy0 = fract(floor(gx0) * (1.0 / 7.0)) - 0.5;
+  gx0 = fract(gx0);
+  vec4 gz0 = vec4(0.5) - abs(gx0) - abs(gy0);
+  vec4 sz0 = step(gz0, vec4(0.0));
+  gx0 -= sz0 * (step(0.0, gx0) - 0.5);
+  gy0 -= sz0 * (step(0.0, gy0) - 0.5);
+
+  vec4 gx1 = ixy1 * (1.0 / 7.0);
+  vec4 gy1 = fract(floor(gx1) * (1.0 / 7.0)) - 0.5;
+  gx1 = fract(gx1);
+  vec4 gz1 = vec4(0.5) - abs(gx1) - abs(gy1);
+  vec4 sz1 = step(gz1, vec4(0.0));
+  gx1 -= sz1 * (step(0.0, gx1) - 0.5);
+  gy1 -= sz1 * (step(0.0, gy1) - 0.5);
+
+  vec3 g000 = vec3(gx0.x,gy0.x,gz0.x);
+  vec3 g100 = vec3(gx0.y,gy0.y,gz0.y);
+  vec3 g010 = vec3(gx0.z,gy0.z,gz0.z);
+  vec3 g110 = vec3(gx0.w,gy0.w,gz0.w);
+  vec3 g001 = vec3(gx1.x,gy1.x,gz1.x);
+  vec3 g101 = vec3(gx1.y,gy1.y,gz1.y);
+  vec3 g011 = vec3(gx1.z,gy1.z,gz1.z);
+  vec3 g111 = vec3(gx1.w,gy1.w,gz1.w);
+
+  vec4 norm0 = taylorInvSqrt(vec4(dot(g000, g000), dot(g010, g010), dot(g100, g100), dot(g110, g110)));
+  g000 *= norm0.x;
+  g010 *= norm0.y;
+  g100 *= norm0.z;
+  g110 *= norm0.w;
+  vec4 norm1 = taylorInvSqrt(vec4(dot(g001, g001), dot(g011, g011), dot(g101, g101), dot(g111, g111)));
+  g001 *= norm1.x;
+  g011 *= norm1.y;
+  g101 *= norm1.z;
+  g111 *= norm1.w;
+
+  float n000 = dot(g000, Pf0);
+  float n100 = dot(g100, vec3(Pf1.x, Pf0.yz));
+  float n010 = dot(g010, vec3(Pf0.x, Pf1.y, Pf0.z));
+  float n110 = dot(g110, vec3(Pf1.xy, Pf0.z));
+  float n001 = dot(g001, vec3(Pf0.xy, Pf1.z));
+  float n101 = dot(g101, vec3(Pf1.x, Pf0.y, Pf1.z));
+  float n011 = dot(g011, vec3(Pf0.x, Pf1.yz));
+  float n111 = dot(g111, Pf1);
+
+  vec3 fade_xyz = fade(Pf0);
+  vec4 n_z = mix(vec4(n000, n100, n010, n110), vec4(n001, n101, n011, n111), fade_xyz.z);
+  vec2 n_yz = mix(n_z.xy, n_z.zw, fade_xyz.y);
+  float n_xyz = mix(n_yz.x, n_yz.y, fade_xyz.x); 
+  return 2.2 * n_xyz;
+}
+
+// Classic Perlin noise, periodic variant
+float pnoise(vec3 P, vec3 rep)
+{
+  vec3 Pi0 = mod(floor(P), rep); // Integer part, modulo period
+  vec3 Pi1 = mod(Pi0 + vec3(1.0), rep); // Integer part + 1, mod period
+  Pi0 = mod289(Pi0);
+  Pi1 = mod289(Pi1);
+  vec3 Pf0 = fract(P); // Fractional part for interpolation
+  vec3 Pf1 = Pf0 - vec3(1.0); // Fractional part - 1.0
+  vec4 ix = vec4(Pi0.x, Pi1.x, Pi0.x, Pi1.x);
+  vec4 iy = vec4(Pi0.yy, Pi1.yy);
+  vec4 iz0 = Pi0.zzzz;
+  vec4 iz1 = Pi1.zzzz;
+
+  vec4 ixy = permute(permute(ix) + iy);
+  vec4 ixy0 = permute(ixy + iz0);
+  vec4 ixy1 = permute(ixy + iz1);
+
+  vec4 gx0 = ixy0 * (1.0 / 7.0);
+  vec4 gy0 = fract(floor(gx0) * (1.0 / 7.0)) - 0.5;
+  gx0 = fract(gx0);
+  vec4 gz0 = vec4(0.5) - abs(gx0) - abs(gy0);
+  vec4 sz0 = step(gz0, vec4(0.0));
+  gx0 -= sz0 * (step(0.0, gx0) - 0.5);
+  gy0 -= sz0 * (step(0.0, gy0) - 0.5);
+
+  vec4 gx1 = ixy1 * (1.0 / 7.0);
+  vec4 gy1 = fract(floor(gx1) * (1.0 / 7.0)) - 0.5;
+  gx1 = fract(gx1);
+  vec4 gz1 = vec4(0.5) - abs(gx1) - abs(gy1);
+  vec4 sz1 = step(gz1, vec4(0.0));
+  gx1 -= sz1 * (step(0.0, gx1) - 0.5);
+  gy1 -= sz1 * (step(0.0, gy1) - 0.5);
+
+  vec3 g000 = vec3(gx0.x,gy0.x,gz0.x);
+  vec3 g100 = vec3(gx0.y,gy0.y,gz0.y);
+  vec3 g010 = vec3(gx0.z,gy0.z,gz0.z);
+  vec3 g110 = vec3(gx0.w,gy0.w,gz0.w);
+  vec3 g001 = vec3(gx1.x,gy1.x,gz1.x);
+  vec3 g101 = vec3(gx1.y,gy1.y,gz1.y);
+  vec3 g011 = vec3(gx1.z,gy1.z,gz1.z);
+  vec3 g111 = vec3(gx1.w,gy1.w,gz1.w);
+
+  vec4 norm0 = taylorInvSqrt(vec4(dot(g000, g000), dot(g010, g010), dot(g100, g100), dot(g110, g110)));
+  g000 *= norm0.x;
+  g010 *= norm0.y;
+  g100 *= norm0.z;
+  g110 *= norm0.w;
+  vec4 norm1 = taylorInvSqrt(vec4(dot(g001, g001), dot(g011, g011), dot(g101, g101), dot(g111, g111)));
+  g001 *= norm1.x;
+  g011 *= norm1.y;
+  g101 *= norm1.z;
+  g111 *= norm1.w;
+
+  float n000 = dot(g000, Pf0);
+  float n100 = dot(g100, vec3(Pf1.x, Pf0.yz));
+  float n010 = dot(g010, vec3(Pf0.x, Pf1.y, Pf0.z));
+  float n110 = dot(g110, vec3(Pf1.xy, Pf0.z));
+  float n001 = dot(g001, vec3(Pf0.xy, Pf1.z));
+  float n101 = dot(g101, vec3(Pf1.x, Pf0.y, Pf1.z));
+  float n011 = dot(g011, vec3(Pf0.x, Pf1.yz));
+  float n111 = dot(g111, Pf1);
+
+  vec3 fade_xyz = fade(Pf0);
+  vec4 n_z = mix(vec4(n000, n100, n010, n110), vec4(n001, n101, n011, n111), fade_xyz.z);
+  vec2 n_yz = mix(n_z.xy, n_z.zw, fade_xyz.y);
+  float n_xyz = mix(n_yz.x, n_yz.y, fade_xyz.x); 
+  return 2.2 * n_xyz;
+}
+
+uniform sampler2D tSpecular;
+uniform vec2 cameraRotation;
+
+varying vec3 vReflect;
+varying vec2 vUv;
+varying vec3 vNormal;
+
+void main(void) {
+
+	float PI = 3.14159265358979323846264;
+	float yaw, pitch;
+	
+	vec3 modNormal = normalize( vNormal + .025 * pnoise( vec3( 1000.0 * vUv, 1.0 ), vec3( 1000.0 ) ) );
+	yaw = .5 - atan( modNormal.z, - modNormal.x ) / ( 2.0 * PI );
+	pitch = .5 - asin( modNormal.y ) / PI;
+	vec2 pos = vec2( yaw, pitch );
+	vec3 base = texture2D( tSpecular, pos ).rgb;
+	
+	gl_FragColor = vec4( base, 1.0 );
+}
+
+</script>
+
+<script type="x-shader/x-vertex" id="vs_Room">
+
+varying vec2 vUv;
+varying vec3 vPosition;
+
+void main() {
+	
+	vUv = uv;
+	vPosition = position;
+	vec4 mPosition = objectMatrix * vec4( position, 1.0 );
+	gl_Position = projectionMatrix * viewMatrix * mPosition;
+	
+}
+
+</script>
+
+<script type="x-shader/x-vertex" id="fs_Room">
+
+float random(vec3 scale,float seed){return fract(sin(dot(gl_FragCoord.xyz+seed,scale))*43758.5453+seed);}
+
+uniform sampler2D tDiffuse;
+varying vec2 vUv;
+varying vec3 vPosition;
+uniform vec3 bodyPosition[ 10 ];
+uniform vec3 bodyRotation[ 10 ];
+uniform vec3 lineColor[ 10 ];
+uniform int numBodies;
+
+void main(void) {
+
+	vec3 color = texture2D( tDiffuse, vUv ).rgb;
+
+	for( int i = 0; i < 1; i++ ) {
+	
+		vec3 vector = normalize( bodyRotation[ i ] );
+		float d = abs( dot( vector, ( vPosition - bodyPosition[ i ] ) ) );
+		float d2 = length( vPosition - bodyPosition[ i ] );
+		
+		float ca = dot( normalize( vPosition ), normalize( bodyPosition[ i ] ) );
+		float so = clamp( ca * pow( .8 / d2, 2.0 ), 0.0, 1.0 );
+		color *= ( 1.0 - so );
+		
+		float disp = .7 * d2 / 20.0;
+		if( d2 > 20.0 ) disp = .7; 
+		float f = .9 - disp;
+		float v = smoothstep( 0.0, 1.0, - f + clamp( ( 1.0 - d ), 0.0, 1.0 ) );
+		color += lineColor[ i ] * vec3( 20.0 * v ) * ( 1.0 / ( d2 * d2 * d2 ) );
+		
+		vec3 dir = normalize( vPosition - bodyPosition[ i ] );
+		float d3 = abs( dot( dir, vector ) );
+		d3 = 100.0 * smoothstep( 0.99, 1.1, d3 ) * ( 1.0 / ( d2 * d2 * d2 ) );
+		color += lineColor[ i ] * vec3( d3 );
+	
+	}
+	
+	gl_FragColor = vec4( color, 1.0 );
+
+}
+
+</script>
+
+<script>
+
+'use strict';
+
+var links = document.querySelectorAll( 'a[rel=external]' );
+for( var j = 0; j < links.length; j++ ) {
+	var a = links[ j ];
+	a.addEventListener( 'click', function( e ) {
+		window.open( this.href, '_blank' );
+		e.preventDefault();
+	}, false );
+}
+
+Physijs.scripts.worker = 'js/physijs_worker.js';
+Physijs.scripts.ammo = 'ammo.js';
+
+var container = null, renderer, scene, camera, controls, mesh, sceneRTT, cameraRTT, rtTexture, torus, material, particles, particlesGeometry;
+var room, body, light, bodyGeometry, lightGeometry, roomMaterial, bodyMaterial, lightMaterial;
+var phMaterial;
+var clock = new THREE.Clock();
+var fov = 30, stats, distance = 10;
+var audio, canvas;
+var cover = document.getElementById( 'cover' );
+var fsBtn = document.getElementById( 'fullscreeBtn' );
+
+fsBtn.addEventListener( 'click', function( e ) {
+	container.addEventListener( 'webkitfullscreenchange', function(e) {
+	}, false );
+	document.addEventListener( 'mozfullscreenchange', function(e) {
+	}, false );
+	if( container.webkitRequestFullScreen ) container.webkitRequestFullScreen( Element.ALLOW_KEYBOARD_INPUT );
+	if( container.mozRequestFullScreen ) container.mozRequestFullScreen();
+	e.preventDefault();
+}, false );
+
+window.addEventListener( 'load', init );
+window.addEventListener( 'resize', onWindowResize, false );
+
+function onWindowResize() {
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	camera.projectionMatrix.makePerspective( fov, window.innerWidth / window.innerHeight, .1, 100 );
+}
+
+function init() {
+
+	checkLoad();
+
+	container = document.getElementById( 'container' );
+	
+	scene = new Physijs.Scene;
+	camera = new THREE.PerspectiveCamera( fov, window.innerWidth / window.innerHeight, .1, 100 );
+	camera.target = new THREE.Vector3( 0, 0, 0 );
+	camera.position.set( -5, 7, 0 );
+	camera.lookAt( scene.position );
+	scene.add( camera );
+	controls = new THREE.PortalControls( camera );
+	// faster controls thx @bkcore
+	controls.movementSpeed = 10;
+	controls.lookSpeed  = 0.1;
+
+	renderer = new THREE.WebGLRenderer( { antialias: true } );
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.autoClear = false;
+	renderer.setClearColor( 0x0, 0 );
+
+	container.appendChild( renderer.domElement );
+
+	window.addEventListener( 'keydown', onKeyDown, false );
+	container.addEventListener( 'mousedown', onMouseDown, false );
+	container.addEventListener( 'mousemove', onMouseMove, false );
+	container.addEventListener( 'mouseup', onMouseUp, false );
+	container.addEventListener( 'mousewheel', onMouseWheel, false );
+	container.addEventListener( 'DOMMouseScroll', onMouseWheel, false);
+
+	roomMaterial = new THREE.ShaderMaterial( {
+
+		uniforms: { 
+			tDiffuse: { type: 't', value: 0, texture: THREE.ImageUtils.loadTexture( 'assets/fondo_bake.png' ) },
+			bodyPosition: { type: 'v3v', value: [] },
+			bodyRotation: { type: 'v3v', value: [] },
+			lineColor: { type: 'v3v', value: [] },
+			numBodies: { type: 'i', value: 0 }
+		},
+		vertexShader: document.getElementById( 'vs_Room' ).textContent,
+		fragmentShader: document.getElementById( 'fs_Room' ).textContent
+		
+	} );
+
+	bodyMaterial = new THREE.ShaderMaterial( {
+
+		uniforms: { 
+			tSpecular: { type: "t", value: 0, texture: THREE.ImageUtils.loadTexture( 'shine.jpg' ) },
+			cameraRotation: { type: "v2", value: new THREE.Vector2( 0, 0 ) }
+		},
+		vertexShader: document.getElementById( 'vertexShader' ).textContent,
+		fragmentShader: document.getElementById( 'fragmentShader' ).textContent
+		
+	} );
+	
+	phMaterial = new THREE.MeshBasicMaterial( { color: 0xff00ff, wireframe: false, depth_test: false } );
+
+	var loader = new THREE.JSONLoader( true );
+	loader.load( 'assets/fondo.js', function( geometry ) { 
+		
+		geometry.computeTangents();
+		room = new THREE.Mesh( geometry, roomMaterial );
+		scene.add( room );
+		
+	} );
+
+	var loader2 = new THREE.JSONLoader( true );
+	loader2.load( 'assets/bola.js', function( geometry ) { 
+		bodyGeometry = geometry;
+	} );
+	
+	var loader3 = new THREE.JSONLoader( true );
+	loader3.load( 'assets/bola_luz.js', function( geometry ) { 
+		lightGeometry = geometry;
+	} );
+	
+	particlesGeometry = new THREE.Geometry();
+
+	for ( var i = 0; i < 300; i ++ ) {
+
+		var vertex = new THREE.Vector3(
+			Math.random() * 26 - 13,
+			Math.random() * 10,
+			Math.random() * 26 - 13
+		);
+		
+		particlesGeometry.vertices.push( vertex );
+
+	}
+	
+	var particleMaterial = new THREE.ParticleBasicMaterial( { 
+		size: 10,
+		opacity: .015,
+		map: THREE.ImageUtils.loadTexture( 'coc.png' ), 
+		blending: THREE.AdditiveBlending, 
+		depthTest: true, 
+		transparent : true 
+	} );
+	particles = new THREE.ParticleSystem( particlesGeometry, particleMaterial );
+	particles.sortParticles  = true;
+	scene.add( particles );
+	
+	stats = new Stats();
+	stats.domElement.style.position = 'absolute';
+	stats.domElement.style.top = '0px';
+	//container.appendChild( stats.domElement );
+
+}
+
+var spheres = [];
+
+function createSphere() {
+
+	var sphere = new THREE.Object3D();
+	
+	var lightMaterial = new THREE.MeshBasicMaterial( { color: 0x7af2ff } );
+	var body = new THREE.Mesh( bodyGeometry, bodyMaterial );
+	var light = new THREE.Mesh( lightGeometry, lightMaterial );
+
+	sphere.add( body );
+	sphere.add( light );
+	scene.add( sphere );
+
+	var phSphere = new Physijs.SphereMesh(
+		new THREE.SphereGeometry( 1, 5, 5 ),
+		Physijs.createMaterial(
+			phMaterial,
+			.8,
+			.4
+		),
+		4
+	);
+	phSphere.position.set( -5 + 10 * Math.random(), 3 + 5 * Math.random(), -5 + 10 * Math.random() );
+	phSphere.rotation.set( 0, 0, + Math.PI / 4 );
+	scene.add( phSphere );
+	phSphere.visible = false;
+	
+	var def = {
+		sphere: sphere,
+		body: body,
+		light: light,
+		phSphere: phSphere,
+		frequency: .5 + Math.random()
+	};
+	
+	room.material.uniforms[ 'bodyPosition' ].value.push( new THREE.Vector3( 0, 0, 0 ) );
+	room.material.uniforms[ 'bodyRotation' ].value.push( new THREE.Vector3( 0, 0, 0 ) );
+	room.material.uniforms[ 'lineColor' ].value.push( new THREE.Vector3( 0, 0, 0 ) );
+	
+	spheres.push( def );
+
+	return def;
+	
+}
+
+function checkLoad() {
+
+	if( room && bodyGeometry && lightGeometry 
+		&& roomMaterial.uniforms.tDiffuse.texture.image.complete
+		&& bodyMaterial.uniforms.tSpecular.texture.image.complete ) {
+	
+		for( var j = 0; j < 1; j++ ) {
+			createSphere();
+		}
+		room.material.uniforms[ 'numBodies' ].value = spheres.length;	
+		
+		var pMaterial = Physijs.createMaterial( phMaterial, .8, .4 );
+		var ground = new Physijs.BoxMesh( new THREE.CubeGeometry( 26.5, .6, 26.5 ), pMaterial, 0 );
+		ground.position.set( 0, .1, 0 );
+		scene.add( ground );
+		ground.visible = true;
+		
+		ground = new Physijs.BoxMesh( new THREE.CubeGeometry( 40, .5, 40 ), pMaterial, 0 );
+		ground.position.set( 0, -14.4, 0 );
+		scene.add( ground );
+		ground.visible = false;
+
+		var wall = new Physijs.BoxMesh( new THREE.CubeGeometry( .5, 40, 40 ), pMaterial, 0 );
+		wall.position.set( -14.4, 0, 0 );
+		wall.visible = false;
+		scene.add( wall );
+		
+		wall = new Physijs.BoxMesh( new THREE.CubeGeometry( .5, 40, 40 ), pMaterial, 0 );
+		wall.position.set( 14.4, 0, 0 );
+		wall.visible = false;
+		scene.add( wall );
+		
+		wall = new Physijs.BoxMesh( new THREE.CubeGeometry( 40, 40, .5 ), pMaterial, 0 );
+		wall.position.set( 0, 0, 14.4 );
+		wall.visible = false;
+		scene.add( wall );
+		
+		wall = new Physijs.BoxMesh( new THREE.CubeGeometry( 40, 40, .5 ), pMaterial, 0 );
+		wall.position.set( 0, 0, -14.4 );
+		wall.visible = false;
+		scene.add( wall );
+		
+		var ceiling = new Physijs.BoxMesh( new THREE.CubeGeometry( 40, .5, 40 ), pMaterial, 0 );
+		ceiling.position.set( 0, 10, 0 );
+		ceiling.visible = false;
+		scene.add( ceiling );
+		
+		cover.style.opacity = 0;
+		lat = 25;
+		distance = 10;
+		nlat = 0;
+		ndistance = 6;
+		render();
+	} else {
+		setTimeout( checkLoad, 100 );
+	}
+	
+}
+
+var ndistance = distance;
+
+function onMouseWheel( event ) {
+
+	// WebKit
+
+	if ( event.wheelDeltaY ) {
+
+		ndistance -= event.wheelDeltaY * 0.01;
+
+	// Opera / Explorer 9
+
+	} else if ( event.wheelDelta ) {
+
+		ndistance -= event.wheelDelta * 0.01;
+
+	// Firefox
+
+	} else if ( event.detail ) {
+
+		ndistance += event.detail * 1.0;
+
+	}
+
+	if( ndistance > 16 ) ndistance = 16;
+	if( ndistance < 2 ) ndistance = 2;
+	
+}
+
+var onPointerDownPointerX = 0, onPointerDownPointerY = 0,
+lon = 0, onPointerDownLon = 0,
+lat = 0, onPointerDownLat = 0,
+phi = 0, theta = 0,	
+lat = 15, isUserInteracting = false;
+var nlat = 0, nlon = 0;
+
+var currentPreset = 0;
+
+function onMouseDown( event ) {
+
+	event.preventDefault();
+
+	isUserInteracting = true;
+
+	onPointerDownPointerX = event.clientX;
+	onPointerDownPointerY = event.clientY;
+
+	onPointerDownLon = lon;
+	onPointerDownLat = lat;
+
+	currentPreset++;
+	currentPreset %= presets.length;
+	
+}
+
+var effect = new THREE.Vector3( 0,0,0 ),
+ offset = new THREE.Vector3( 0,0,0 );
+
+function onKeyDown( event ) {
+
+	if( event.keyCode === 32 ) {
+	
+		var force = 100;
+		
+		for( var j = 0; j < spheres.length; j++ ) {
+			var sphere = spheres[ j ];
+			var bP = sphere.sphere.position;
+			var cP = camera.position;
+			var dir = new THREE.Vector3().sub( bP, cP );
+			dir = dir.normalize();
+			effect.set( dir.x * force, + 2 * force, dir.z * force );
+			sphere.phSphere.applyImpulse( effect, offset );
+		}
+		
+	}
+	
+}
+
+function onMouseMove( event ) {
+
+	if ( isUserInteracting ) {
+	
+		nlon = ( event.clientX - onPointerDownPointerX ) * 0.1 + onPointerDownLon;
+		nlat = ( event.clientY - onPointerDownPointerY ) * 0.1 + onPointerDownLat;
+		
+	}
+
+}
+
+function onMouseUp( event ) {
+	
+	isUserInteracting = false;
+	
+}
+
+var start = Date.now();
+
+var presets = [
+	{ lat: 1.5, lon: -1.5 },
+	{ lat: 16.5, lon: 46.5 },
+	{ lat: 1.5, lon: -90 },
+	{ lat: 45, lon: 0 },
+	{ lat: 85, lon: -90 }
+];
+
+var planeMatrix = new THREE.Matrix4(), 
+	planeVector = new THREE.Vector3( 1, 1, 0 ),
+	centerVector = new THREE.Vector3( 0, .85, 0 );
+
+function render() {
+
+	controls.update( clock.getDelta() );
+	scene.simulate();
+
+	var speed = .015;
+	var time = Date.now() * 0.00005;
+	
+	if( particles ) { particles.rotation.y = .1 * time; }
+	if( particlesGeometry ) {
+		for( var j = 0; j < particlesGeometry.vertices.length; j++ ) {
+			particlesGeometry.vertices[ j ].y += .001;
+			particlesGeometry.vertices[ j ].x += .001 * ( .5 - Math.random() );
+			particlesGeometry.vertices[ j ].y += .001 * ( .5 - Math.random() );
+			particlesGeometry.vertices[ j ].z += .001 * ( .5 - Math.random() );
+			if( particlesGeometry.vertices[ j ].y > 10 ) {
+				particlesGeometry.vertices[ j ].x = Math.random() * 20 - 10
+				particlesGeometry.vertices[ j ].y = 0;
+				particlesGeometry.vertices[ j ].z = Math.random() * 20 - 10
+			}
+		}
+	}
+	
+	lat += ( nlat - lat ) * speed;
+	lon += ( nlon - lon ) * speed;
+	
+	lat = Math.max( - 85, Math.min( 85, lat ) );
+	phi = ( 90 - lat ) * Math.PI / 180;
+	theta = lon * Math.PI / 180;
+
+	for( var j = 0; j < spheres.length; j++ ) {
+	
+		var sphere = spheres[ j ];
+		
+		sphere.body.material.uniforms[ 'cameraRotation' ].value.set( phi / ( 2 * Math.PI ), theta / ( 2 * Math.PI ) );
+		
+		var color = [ 1, 1, 1 ];
+		var h = ( 360 * ( color[0] + time * sphere.frequency ) % 360 ) / 360;
+		sphere.light.material.color.setHSV( h, color[1], color[2] );
+		var c = hsvToRgb( h, color[ 1 ], color[ 2 ] );
+		room.material.uniforms[ 'lineColor' ].value[ j ].set( sphere.light.material.color.r, sphere.light.material.color.g, sphere.light.material.color.b );
+	
+		sphere.sphere.rotation.set( sphere.phSphere.rotation.x, sphere.phSphere.rotation.y, sphere.phSphere.rotation.z );
+		planeVector.set( 0, 1, 0 );
+		planeMatrix.identity();
+		planeMatrix.rotateX( sphere.phSphere.rotation.x );
+		planeMatrix.rotateY( sphere.phSphere.rotation.y );
+		planeMatrix.rotateZ( sphere.phSphere.rotation.z );
+		
+		var r = planeMatrix.multiplyVector3( planeVector );
+		room.material.uniforms[ 'bodyRotation' ].value [ j ].set( r.x, r.y, r.z );
+		
+		room.material.uniforms[ 'bodyPosition' ].value[ j ].set( 
+			sphere.sphere.position.x,
+			sphere.sphere.position.y,
+			sphere.sphere.position.z 
+		);
+		
+		sphere.sphere.position.set( sphere.phSphere.position.x, sphere.phSphere.position.y, sphere.phSphere.position.z );
+		
+	}
+
+	camera.lookAt( spheres[ 0 ].sphere.position );
+	
+	var limit = 13;
+	if( camera.position.x < -limit ) camera.position.x = -limit; 
+	if( camera.position.x > limit ) camera.position.x = limit; 
+	if( camera.position.z < -limit ) camera.position.z = -limit; 
+	if( camera.position.z > limit ) camera.position.z = limit; 
+	if( camera.position.y < 1 ) camera.position.y = 1; 
+	if( camera.position.y > 10 ) camera.position.y = 10;
+
+	renderer.clear();
+	renderer.render( scene, camera );
+	
+	stats.update();
+	requestAnimationFrame( render );
+
+}
+
+function hsvToRgb(h, s, v){
+	var r, g, b;
+
+	var i = Math.floor(h * 6);
+	var f = h * 6 - i;
+	var p = v * (1 - s);
+	var q = v * (1 - f * s);
+	var t = v * (1 - (1 - f) * s);
+
+	switch(i % 6){
+		case 0: r = v, g = t, b = p; break;
+		case 1: r = q, g = v, b = p; break;
+		case 2: r = p, g = v, b = t; break;
+		case 3: r = p, g = q, b = v; break;
+		case 4: r = t, g = p, b = v; break;
+		case 5: r = v, g = p, b = q; break;
+	}
+
+	return [r, g, b];
+}
+
+
+</script>
+
+		
+	</body>
+</html>
