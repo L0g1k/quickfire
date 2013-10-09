@@ -8,6 +8,7 @@ define(function (require, exports, module) {
     "use strict";
 
     var Async = require("utils/Async");
+    var FileUtils = require("chrome/utils/FileUtils");
     var browserFS;
     var NO_ERROR = 0;
     var ERR_UNKNOWN = 1;
@@ -18,11 +19,10 @@ define(function (require, exports, module) {
     var ERR_CANT_WRITE = 6;
     var ERR_OUT_OF_SPACE = 7;
     var ERR_NOT_FILE = 8;
-    var ERR_NOT_DIRECTORY = 9;
 
+    var ERR_NOT_DIRECTORY = 9;
     var entries = [];
     var ENTRY_KEY = 'com.quickfire.directories';
-
     // Brackets will often stat a file, get it's path, then ask for it again right away through readFile.
     var statCache = {};
 
@@ -44,6 +44,15 @@ define(function (require, exports, module) {
             deferred.resolve();
         }
         return deferred.promise();
+    }
+
+    function showSaveDialog(title, initialPath, proposedNewFilename, callback) {
+        chrome.fileSystem.chooseEntry({
+            type: "saveFile",
+            suggestedName: proposedNewFilename
+        }, function(entry) {
+            callback(brackets.fs.NO_ERROR, entry.fullPath);
+        })
     }
 
     function saveEntryReference(entryId) {
@@ -219,13 +228,23 @@ define(function (require, exports, module) {
     }
 
     function stat(path, callback) {
+        _search(path).then(function(entry){
+            _completeStat(entry, callback);
+        }, function(){
+            callback(brackets.fs.ERR_NOT_FOUND);
+        })
+    }
+
+    function _search(path) {
+        var deferred = $.Deferred();
+
         var entries = getEntryReferences();
 
         function inBrowser() {
             statBrowserFS(path).then(function(entry){
-                _completeStat(entry, callback);
+                deferred.resolve(entry);
             }, function(){
-                callback(brackets.fs.ERR_NOT_FOUND);
+                deferred.reject();
             })
         }
 
@@ -233,9 +252,10 @@ define(function (require, exports, module) {
             inBrowser();
         } else {
             Async.any(entries, _findPathInDirectory.bind(this, path)).then(function(entry){
-                _completeStat(entry, callback);
+                deferred.resolve(entry);
             }).fail(inBrowser);
         }
+        return deferred.promise();
     }
 
     function _completeStat(entry, callback) {
@@ -291,11 +311,26 @@ define(function (require, exports, module) {
 
     function writeFile(path, data, encoding, callback) {
         console.debug("writeFile", path);
-        var entry = statCache[path];
-        if(!entry)
-            callback(brackets.fs.ERR_NOT_FOUND);
-        else {
+        function _write() {
             writeText(data, entry, encoding, callback);
+        }
+        var entry = statCache[path];
+        if(!entry) {
+            var parent = "/" + FileUtils.getRootFolder(path);
+            _search(parent).then(function(parent){
+                parent.getFile(path, {create: true}, function(_entry){
+                    entry = _entry;
+                    statCache[path] = _entry;
+                    _write();
+                }, function(err){
+                    callback(err);
+                })
+            }, function(){
+                callback(brackets.fs.ERR_NOT_FOUND);
+            })
+        }
+        else {
+            _write();
         }
     }
 
@@ -353,4 +388,5 @@ define(function (require, exports, module) {
     exports.chmod = chmod;
     exports.unlink = unlink;
     exports.cwd = cwd;
+    exports.showSaveDialog = showSaveDialog;
 });
