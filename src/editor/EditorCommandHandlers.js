@@ -841,6 +841,18 @@ define(function (require, exports, module) {
         return handleUndoRedo("redo");
     }
 
+    function cut() {
+        document.execCommand('cut');
+    }
+
+    function copy() {
+        document.execCommand('copy');
+    }
+
+    function paste() {
+        document.execCommand('paste');
+    }
+
     /**
      * Special command handler that just ignores the command. This is used for Cut, Copy, and Paste.
      * These menu items are handled natively, but need to be registered in our JavaScript code so the 
@@ -880,8 +892,8 @@ define(function (require, exports, module) {
 
     CommandManager.register(Strings.CMD_UNDO,             Commands.EDIT_UNDO,             handleUndo);
     CommandManager.register(Strings.CMD_REDO,             Commands.EDIT_REDO,             handleRedo);
-    CommandManager.register(Strings.CMD_CUT,              Commands.EDIT_CUT,              ignoreCommand);
-    CommandManager.register(Strings.CMD_COPY,             Commands.EDIT_COPY,             ignoreCommand);
-    CommandManager.register(Strings.CMD_PASTE,            Commands.EDIT_PASTE,            ignoreCommand);
+    CommandManager.register(Strings.CMD_CUT,              Commands.EDIT_CUT,              cut);
+    CommandManager.register(Strings.CMD_COPY,             Commands.EDIT_COPY,             copy);
+    CommandManager.register(Strings.CMD_PASTE,            Commands.EDIT_PASTE,            paste);
     CommandManager.register(Strings.CMD_SELECT_ALL,       Commands.EDIT_SELECT_ALL,       _handleSelectAll);
 });

@@ -24,7 +24,9 @@
         "fileSystem.retainEntries",
         "fileSystem.write",
         "fileSystem.directory",
-        "unlimitedStorage"
+        "unlimitedStorage",
+        "clipboardRead",
+        "clipboardWrite"
     ],
     "offline_enabled": true
 

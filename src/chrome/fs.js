@@ -165,8 +165,17 @@ define(function (require, exports, module) {
     }
 
     function makedir(path, permission, callback) {
-        console.debug("makedir", path);
-        callback(ERR_CANT_READ);
+         var parent = "/" + FileUtils.getRootFolder(path);
+            _search(parent).then(function(parent){
+                parent.getDirectory(path, {create: true}, function(_entry){
+                    statCache[path] = _entry;
+                    callback(brackets.fs.NO_ERROR);
+                }, function(err){
+                    callback(err);
+                })
+            }, function(){                
+                callback(brackets.fs.ERR_CANT_READ);
+            });
     }
 
     function showOpenDialog(allowMultipleSelection,
@@ -228,10 +237,20 @@ define(function (require, exports, module) {
     }
 
     function stat(path, callback) {
-        _search(path).then(function(entry){
+        _search(path).then(function (entry) {
             _completeStat(entry, callback);
-        }, function(){
-            callback(brackets.fs.ERR_NOT_FOUND);
+        }, function () {
+            $.get(path)
+                .done(function () {
+                    callback(brackets.fs.NO_ERROR, {
+                        isFile: function () { return true },
+                        isDirectory: function () { return false },
+                        mtime: new Date()
+                    })
+                })
+                .fail(function () {
+                    callback(brackets.fs.ERR_NOT_FOUND)
+                });
         })
     }
 
@@ -285,8 +304,7 @@ define(function (require, exports, module) {
      * @param encoding
      * @param callback
      */
-    function readFile(path, encoding, callback) {
-        console.debug("readFile", path);
+    function readFile(path, encoding, callback) {        
         var cachedFile = statCache[path];
         if(cachedFile)
             cachedFile.file(function(file){
