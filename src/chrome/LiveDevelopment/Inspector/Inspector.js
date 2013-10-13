@@ -12,7 +12,8 @@ define(function (require, exports, module) {
         _messageId = 1, // id used for remote method calls, auto-incrementing
         _messageCallbacks = {}; // {id -> function} for remote method calls
 
-    var NativeApp            = require("utils/NativeApp");
+    var NativeApp = require("utils/NativeApp"),
+        WebSocketServer = require("chrome/lib/chrome-websocket");
 
         function initSocket() {
         _socket.onMessage.addListener(_onMessage);
@@ -24,6 +25,22 @@ define(function (require, exports, module) {
      * @param {string} remote method
      * @param {object} the method signature
      */
+
+    function autoDetectExtensionId() {
+        var port = 9876;
+        var wss = new WebSocketServer(port, "127.0.0.1");
+        console.debug("Listening for extension id information on port " + port);
+        wss.onMessage(function(_message) {
+            var message = JSON.parse(_message);
+            if(message.extensionId) {
+                extensionId = message.extensionId;
+                console.debug("Set extension id to " + extensionId);
+                wss.send(JSON.stringify({
+                    extensionIdSet: true
+                }))
+            }
+        });
+    }
 
     function _onDisconnect() {
         _socket = undefined;
@@ -262,5 +279,6 @@ define(function (require, exports, module) {
     exports.connect = connect;
     exports.connectToURL = connectToURL;
     exports.connected = connected;
+    exports.autoDetectExtensionId = autoDetectExtensionId;
     exports.init = init;
 });
