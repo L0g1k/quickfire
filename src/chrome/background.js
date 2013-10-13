@@ -1,7 +1,14 @@
-chrome.app.runtime.onLaunched.addListener(function (arg) {
+chrome.app.runtime.onLaunched.addListener(function (details) {
+    if(details.reason = "install") {
+        removeLocalData();
+    }
     require(["src/chrome/utils/DemoLoader"], function (demoLoader) {
-        demoLoader.checkThatDemosExist().done(launchEditor).fail(function () {
-            demoLoader.loadDemos().done(launchEditor).fail(function (error) {
+        demoLoader.checkThatDemosExist().done(function(){
+            console.debug("Demo data exists");
+            launchEditor();
+        }).fail(function () {
+                console.debug("Demo data doesn't exist; creating it");
+                demoLoader.loadDemos().done(launchEditor).fail(function (error) {
                 console.error("There was a problem loading demos. It's likely that the application won't " +
                     "function properly. Starting anyway...", error);
                 launchEditor();
@@ -9,6 +16,7 @@ chrome.app.runtime.onLaunched.addListener(function (arg) {
         });
     });
 });
+
 
 
 function launchEditor() {
@@ -30,22 +38,29 @@ function launchEditor() {
 
 // Will emulate a fresh install
 
-function removeLocalData() {
+function removeLocalData(demos) {
+
+    var deferred = $.Deferred();
     chrome.storage.local.clear();
-    require(["src/chrome/lib/filer"], function(Obj) {
-        var Filer = Obj.Filer;
-        var filer = new Filer();
-        var onErr = console.error.bind(console);
-        filer.init({size: 1024 * 1024, persistent: true}, onInit.bind(filer), onErr);
 
-        function onInit(fs) {
-            var fsURL = filer.pathToFilesystemURL('/samples');
-            this.rm(fsURL, function success(){
-                console.debug("Local data removed");
-            }, onErr);
-        }
-    })
+    if(demos) {
+        require(["src/chrome/lib/filer"], function(Obj) {
+            var Filer = Obj.Filer;
+            var filer = new Filer();
+            var onErr = console.error.bind(console);
+            filer.init({size: 1024 * 1024, persistent: true}, onInit.bind(filer), onErr);
 
+            function onInit(fs) {
+                var fsURL = filer.pathToFilesystemURL('/samples');
+                this.rm(fsURL, function success(){
+                    console.debug("Local data removed");
+                    deferred.resolve();
+                }, deferred.reject);
+            }
+        })
+    }
+
+    return deferred.promise();
 }
 
 
