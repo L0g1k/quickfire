@@ -1309,7 +1309,6 @@ define(function LiveDevelopment(require, exports, module) {
         // Initialize exports.status
         _setStatus(STATUS_INACTIVE);
 
-        Inspector.autoDetectExtensionId();
     }
 
     function _getServer() {

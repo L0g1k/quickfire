@@ -1,12 +1,13 @@
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
-/*global require, define, brackets: true, $, window, navigator, Mustache, chrome */
+/*global chromeStorageObj, require, define, brackets: true, $, window, navigator, Mustache, chrome */
 
 define(function (require, exports, module) {
     "use strict";
 
     // jQuery exports object for events
     var $exports = $(exports),
-        extensionId = "paoopjjblcebddifekcalpddjekpbipn",
+        ENTRY_KEY = "com.quickfire.extensionId",
+        extensionId = chrome.app.window.current().quickfire.chromeStorageObj[ENTRY_KEY] || "paoopjjblcebddifekcalpddjekpbipn",
         _connectDeferred, // The deferred connect
         _socket, // chrome extension 'socket'
         _messageId = 1, // id used for remote method calls, auto-incrementing
@@ -19,28 +20,11 @@ define(function (require, exports, module) {
         _socket.onMessage.addListener(_onMessage);
         _socket.onDisconnect.addListener(_onDisconnect);
     }
-    /** Send a message to the remote debugger
-     * All passed arguments after the signature are passed on as parameters.
-     * If the last argument is a function, it is used as the callback function.
-     * @param {string} remote method
-     * @param {object} the method signature
-     */
 
-    function autoDetectExtensionId() {
-        var port = 9876;
-        var wss = new WebSocketServer(port, "127.0.0.1");
-        console.debug("Listening for extension id information on port " + port);
-        wss.onMessage(function(_message) {
-            var message = JSON.parse(_message);
-            if(message.extensionId) {
-                extensionId = message.extensionId;
-                console.debug("Set extension id to " + extensionId);
-                wss.send(JSON.stringify({
-                    extensionIdSet: true
-                }))
-            }
-        });
-    }
+
+
+    console.debug("Using chrome extension id of " + extensionId);
+
 
     function _onDisconnect() {
         _socket = undefined;
@@ -99,6 +83,12 @@ define(function (require, exports, module) {
         return deferred.promise();
     }
 
+    /** Send a message to the remote debugger
+     * All passed arguments after the signature are passed on as parameters.
+     * If the last argument is a function, it is used as the callback function.
+     * @param {string} remote method
+     * @param {object} the method signature
+     */
     function _send(method, signature, varargs) {
         if (!_socket) {
             // FUTURE: Our current implementation closes and re-opens an inspector connection whenever
@@ -279,6 +269,5 @@ define(function (require, exports, module) {
     exports.connect = connect;
     exports.connectToURL = connectToURL;
     exports.connected = connected;
-    exports.autoDetectExtensionId = autoDetectExtensionId;
     exports.init = init;
 });

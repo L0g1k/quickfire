@@ -23,14 +23,24 @@ function WebServerSimple(host, port, fs) {
     this.timeoutId = 0;
     chrome.socket.create("tcp", {}, function(_socketInfo) {
         socketInfo = _socketInfo;
-        self._connected = true;
-        chrome.socket.listen(socketInfo.socketId, host, parseInt(port), 50, function(result) {
-            //console.log("LISTENING:", result);
-            chrome.socket.accept(socketInfo.socketId, function(acceptInfo){
-                self.onAccept(acceptInfo);
+
+        try {
+            self._connected = true;
+            chrome.socket.listen(socketInfo.socketId, host, parseInt(port), 50, function(result) {
+                //console.log("LISTENING:", result);
+                chrome.app.window.current().quickfire.socketIds.push(socketInfo.socketId);
+                chrome.socket.accept(socketInfo.socketId, function(acceptInfo){
+                    self.onAccept(acceptInfo);
+                });
             });
-        });
+        } catch (e) {
+            console.warn("Webserver socket started with errors", e.stack);
+        } finally {
+
+        }
+
     });
+
 }
 
 WebServerSimple.prototype.onAccept = function(acceptInfo) {
