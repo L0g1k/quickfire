@@ -1,9 +1,6 @@
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
 /*global chrome, define */
 
-chrome.storage.local.get(null, function(data){
-    chromeStorageObj = data || {};
-});
 define(function (require, exports, module) {
     "use strict";
 
@@ -25,7 +22,7 @@ define(function (require, exports, module) {
     var ENTRY_KEY = 'com.quickfire.directories';
     // Brackets will often stat a file, get it's path, then ask for it again right away through readFile.
     var statCache = {};
-
+    var chromeStorageObj = window.chromeStorageObj;
     function initFiler() {
         var deferred = $.Deferred();
         if(!browserFS) {

@@ -1,1 +1,2 @@
-zip -r quickfire *
+rm quickfire.zip
+zip -r quickfire * -x test/**\*
