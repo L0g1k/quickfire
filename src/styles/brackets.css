@@ -4470,10 +4470,8 @@ input[type="submit"].btn.btn-mini {
 .modal {
   position: fixed;
   top: 50%;
-  left: 50%;
   z-index: 1050;
   width: 600px;
-  margin: -250px 0 0 -280px;
   background-color: #ffffff;
   border: 1px solid #999;
   border: 1px solid rgba(0, 0, 0, 0.3);
@@ -5724,9 +5722,25 @@ body.has-appshell-menus #titlebar {
   margin: 0;
 }
 /* Dialog-related styles */
+.modal-wrapper {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: auto;
+  display: table;
+}
+.modal-inner-wrapper {
+  display: table-cell;
+  vertical-align: middle;
+}
 .modal {
   background-color: #ffffff;
-  width: auto;
+  min-width: 200px;
+  position: relative;
+  top: 0;
+  margin: auto;
 }
 .modal .close {
   cursor: default;
@@ -5737,13 +5751,17 @@ body.has-appshell-menus #titlebar {
   border-radius: 4px 4px 0 0;
   border-bottom: 1px solid #c3c6c5;
 }
+.modal-body {
+  background-color: #ffffff;
+}
 .modal-body,
-.modal-header {
+.modal-header,
+.modal-footer {
   /* See styles/bootstrap/patterns.less .modal class.
        Pushing this value down to .modal-header and .modal-body
        to allow the overall modal to take the width of the footer */
 
-  width: 580px;
+  width: auto;
 }
 .modal-footer {
   text-align: right;
@@ -5880,25 +5898,18 @@ a[href^="http"] {
   margin: 0 0 0 5px;
   width: 400px;
 }
-.install-extension-dialog {
-  margin-top: -125px;
-}
 .install-extension-dialog .modal-body input.url {
   margin: 10px 0;
   width: 550px;
 }
 /* Extension Manager dialog */
 .extension-manager-dialog {
-  top: 50%;
-  left: 50%;
-  margin-top: -275px;
-  margin-left: -350px;
   background-color: #d4d7d7;
+  width: 760px;
 }
 .extension-manager-dialog .modal-header {
   border-bottom: none;
   padding: 0;
-  width: auto;
   /* Search box */
 
 }
@@ -5984,11 +5995,10 @@ a[href^="http"] {
   opacity: 0.3;
 }
 .extension-manager-dialog .modal-body {
-  width: 730px;
   height: 400px;
   overflow-y: scroll;
-  padding: 0;
   background-color: #ffffff;
+  padding: 0;
 }
 .extension-manager-dialog .modal-body .empty-message {
   position: absolute;
@@ -7622,7 +7632,7 @@ img {
 .inline-widget {
   position: relative;
   overflow: hidden;
-  background-color: #eaeaea;
+  background-color: #e6e9e9;
   min-width: 250px;
   cursor: default;
 }
@@ -7637,12 +7647,12 @@ img {
   height: auto;
 }
 .inline-widget .inline-editor-header {
-  padding: 10px 10px 0px 10px;
+  padding: 10px 10px 0px 40px;
 }
 .inline-widget .inline-editor-header .filename {
   font-family: 'SourceSansPro', Helvetica, Arial, "Meiryo UI", "ＭＳ Ｐゴシック", "MS PGothic", sans-serif;
   font-size: 1.1em;
-  color: #a1a3a4;
+  color: #777777;
   cursor: pointer;
 }
 .inline-widget .inline-editor-header .filename .dirty-indicator {
@@ -7680,7 +7690,13 @@ img {
   background-color: transparent;
 }
 .inline-widget .CodeMirror-scroll .CodeMirror-linenumbers {
-  background-color: #eaeaea;
+  background-color: #e6e9e9;
+}
+.inline-widget .close {
+  position: absolute;
+  left: 15px;
+  top: 10px;
+  margin-right: 30px;
 }
 /* CSSInlineEditor rule list */
 .related-container {

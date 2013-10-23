@@ -35,8 +35,9 @@ define(function (require, exports, module) {
     var PreferenceStorage = require("preferences/PreferenceStorage").PreferenceStorage,
         FileUtils         = require("file/FileUtils"),
         ExtensionLoader   = require("utils/ExtensionLoader"),
-        CollectionUtils   = require("utils/CollectionUtils");
-    
+        CollectionUtils   = require("utils/CollectionUtils"),
+        ChromeStorage     = require("preferences/ChromeStorage");
+
     /**
      * The local storage ID
      * @const
@@ -188,19 +189,17 @@ define(function (require, exports, module) {
 
     // Use localStorage by default
     if (module.config().persistentStorage != "chrome"){
-        initStorage(localStorage);
+        _initStorage(localStorage);
     }
     else{
-        //ChromeStorage.initStorage(function(){
-        initStorage(ChromeStorage);
-        //});
+        _initStorage(ChromeStorage);
     }
 
     // Public API
     exports.getPreferenceStorage    = getPreferenceStorage;
     exports.savePreferences         = savePreferences;
     exports.getClientID             = getClientID;
-    exports.initStorage             = initStorage;
+    exports.initStorage             = _initStorage;
 
     // Unit test use only
     exports._reset                  = _reset;
