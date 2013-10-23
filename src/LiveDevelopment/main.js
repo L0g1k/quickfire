@@ -174,49 +174,29 @@ define(function main(require, exports, module) {
     /** Create the menu item "Go Live" */
     function _setupGoLiveButton() {
         _$btnGoLive = $("#toolbar-go-live");
-        chrome.runtime.getPlatformInfo(function(platform){
-            if(platform.os != "win") {
-
-                _$btnGoLive.click(function onGoLive() {
-                    _handleGoLiveCommand();
-                });
-                $(LiveDevelopment).on("statusChange", function statusChange(event, status, reason) {
-                    // status starts at -1 (error), so add one when looking up name and style
-                    // See the comments at the top of LiveDevelopment.js for details on the
-                    // various status codes.
-                    _setLabel(_$btnGoLive, null, _statusStyle[status + 1], _statusTooltip[status + 1]);
-                    _showStatusChangeReason(reason);
-                    if (config.autoconnect) {
-                        window.sessionStorage.setItem("live.enabled", status === 3);
-                    }
-                });
-
-                // Initialize tooltip for 'not connected' state
-                _setLabel(_$btnGoLive, null, _statusStyle[1], _statusTooltip[1]);
-            } else {
-                _$btnGoLive.click(function onGoLive() {
-                    _displayWindowsLiveDevelopmentError();
-                });
-                _setLabel(_$btnGoLive, null, _statusStyle[0], _statusTooltip[1]);
+        _$btnGoLive.click(function onGoLive() {
+            _handleGoLiveCommand();
+        });
+        $(LiveDevelopment).on("statusChange", function statusChange(event, status, reason) {
+            // status starts at -1 (error), so add one when looking up name and style
+            // See the comments at the top of LiveDevelopment.js for details on the
+            // various status codes.
+            _setLabel(_$btnGoLive, null, _statusStyle[status + 1], _statusTooltip[status + 1]);
+            _showStatusChangeReason(reason);
+            if (config.autoconnect) {
+                window.sessionStorage.setItem("live.enabled", status === 3);
             }
-        })
+        });
 
-
+        // Initialize tooltip for 'not connected' state
+        _setLabel(_$btnGoLive, null, _statusStyle[1], _statusTooltip[1]);
     }
-
-    function _displayWindowsLiveDevelopmentError() {
-        Dialogs.showModalDialog(
-            DefaultDialogs.DIALOG_ID_INFO,
-            Strings.LIVE_DEVELOPMENT_OS_NOT_SUPPORTED_MESSAGE,
-            Strings.LIVE_DEVELOPMENT_OS_NOT_SUPPORTED_INFO_MESSAGE
-        )
-    }
-
+    
     /** Maintains state of the Live Preview menu item */
     function _setupGoLiveMenu() {
         $(LiveDevelopment).on("statusChange", function statusChange(event, status) {
             // Update the checkmark next to 'Live Preview' menu item
-            // Add checkmark when status is STATUS_ACTIVE; otherwise remove it 
+            // Add checkmark when status is STATUS_ACTIVE; otherwise remove it
             CommandManager.get(Commands.FILE_LIVE_FILE_PREVIEW).setChecked(status === LiveDevelopment.STATUS_ACTIVE);
             CommandManager.get(Commands.FILE_LIVE_HIGHLIGHT).setEnabled(status === LiveDevelopment.STATUS_ACTIVE);
         });
@@ -271,15 +251,13 @@ define(function main(require, exports, module) {
         // will be in sync with any DOM changes that may have occurred.
         $(window).focus(function () {
             if (Inspector.connected() && config.highlight) {
-                //LiveDevelopment.redrawHighlight();
+                LiveDevelopment.redrawHighlight();
             }
         });
     });
     
     // init prefs
     prefs = PreferencesManager.getPreferenceStorage(module, {highlight: true});
-    //TODO: Remove preferences migration code
-    PreferencesManager.handleClientIdChange(prefs, "com.adobe.brackets.live-development");
     
     config.highlight = prefs.getValue("highlight");
    

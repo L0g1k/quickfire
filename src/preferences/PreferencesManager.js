@@ -31,36 +31,35 @@
  */
 define(function (require, exports, module) {
     "use strict";
-
+    
     var PreferenceStorage = require("preferences/PreferenceStorage").PreferenceStorage,
         FileUtils         = require("file/FileUtils"),
         ExtensionLoader   = require("utils/ExtensionLoader"),
-        CollectionUtils   = require("utils/CollectionUtils"),
-        ChromeStorage     = require("preferences/ChromeStorage");
-
+        CollectionUtils   = require("utils/CollectionUtils");
+    
     /**
      * The local storage ID
      * @const
      * @type {string}
      */
     var PREFERENCES_CLIENT_ID = "com.adobe.brackets.preferences";
-
+    
     /**
      * The prefix used in the generated client ID
      * @const
      * @type {string}
      */
     var CLIENT_ID_PREFIX = "com.adobe.brackets.";
-
-
+    
+    
     // Private Properties
     var preferencesKey,
         prefStorage,
         persistentStorage,
         extensionPaths,
         doLoadPreferences   = false;
-
-
+    
+    
     /**
      * @private
      * Returns an array with the extension paths used in Brackets. The result is stored on a
@@ -70,7 +69,7 @@ define(function (require, exports, module) {
     function _getExtensionPaths() {
         if (!extensionPaths) {
             var dirPath = FileUtils.getNativeBracketsDirectoryPath();
-
+            
             extensionPaths = [
                 dirPath + "/extensions/default/",
                 dirPath + "/extensions/dev/",
@@ -103,12 +102,12 @@ define(function (require, exports, module) {
         }
         return clientID;
     }
-
+    
     /**
      * Retreive the preferences data for the given clientID.
      * @param {string|{id: string, uri: string}} clientID - A unique identifier or a requireJS module object
      * @param {string} defaults - Default preferences stored as JSON
-     * @return {PreferenceStorage}
+     * @return {PreferenceStorage} 
      */
     function getPreferenceStorage(clientID, defaults) {
         if (!clientID || (typeof clientID === "object" && (!clientID.id || !clientID.uri))) {
@@ -161,7 +160,7 @@ define(function (require, exports, module) {
      * @private
      * Initialize persistent storage implementation
      */
-    function initStorage(storage) {
+    function _initStorage(storage) {
         persistentStorage = storage;
 
         if (doLoadPreferences) {
@@ -171,29 +170,6 @@ define(function (require, exports, module) {
         // initialize empty preferences if none were found in storage
         if (!prefStorage) {
             _reset();
-        }
-    }
-
-    /**
-     * This method handles the copy of all old prefs to the new prefs
-     * TODO: remove All calls to this function and the function itself
-     *
-     * @param {!PreferenceStorage} newPrefs The new PreferenceStorage
-     * @param {!string} oldID The id of the old PreferenceStorage
-     */
-    function handleClientIdChange(newPrefs, oldID) {
-        if (prefStorage[oldID]) {
-            var oldPrefs = getPreferenceStorage(oldID);
-
-            if (!newPrefs.getValue("newClientID")) {
-                var data = oldPrefs.getAllValues();
-
-                if (!$.isEmptyObject(data)) {
-                    newPrefs.setAllValues(data, true);
-                }
-                newPrefs.setValue("newClientID", true);
-            }
-            delete prefStorage[oldID];
         }
     }
 
@@ -220,11 +196,9 @@ define(function (require, exports, module) {
         //});
     }
 
-
     // Public API
     exports.getPreferenceStorage    = getPreferenceStorage;
     exports.savePreferences         = savePreferences;
-    exports.handleClientIdChange    = handleClientIdChange;
     exports.getClientID             = getClientID;
     exports.initStorage             = initStorage;
 
