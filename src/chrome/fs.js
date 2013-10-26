@@ -22,7 +22,7 @@ define(function (require, exports, module) {
     var ENTRY_KEY = 'com.quickfire.directories';
     // Brackets will often stat a file, get it's path, then ask for it again right away through readFile.
     var statCache = {};
-    var chromeStorageObj = window.chromeStorageObj;
+    var chromeStorageObj = chrome.app.window.current().quickfire.chromeStorageObj;
     function initFiler() {
         var deferred = $.Deferred();
         if(!browserFS) {

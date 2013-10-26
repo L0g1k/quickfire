@@ -62,9 +62,10 @@ define(function (require, exports, module) {
         "i18n" : srcPath + "/thirdparty/i18n/i18n"
     };
 
-    // We can't read the extensions directory; but the extensions have to be static anyway so we can just
-    // short-cut the entire thing by hard coding a list of the children directories!
+    // TODO: When I wrote this, I didn't realise you could get the file system for the chrome app. It should
+    // be refactored to replace hard-coded list with reading the directory?
     var extensions = [
+        "CloseOthers",
         "CSSCodeHints",
         "HTMLCodeHints",
         "HTMLEntityCodeHints",
