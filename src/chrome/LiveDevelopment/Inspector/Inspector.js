@@ -201,7 +201,7 @@ define(function (require, exports, module) {
 
         });
         promise.fail(function onFail(err) {
-            deferred.reject(err);
+            deferred.reject("NO-EXTENSION");
         });
         return deferred.promise();
 

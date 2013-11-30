@@ -1009,7 +1009,7 @@ define(function LiveDevelopment(require, exports, module) {
                 return;
             }
 
-            if (retryCount > 6) {
+            if (retryCount > 6 || err == "NO-EXTENSION") {
                 _setStatus(STATUS_ERROR);
 
                 var dialogPromise = Dialogs.showModalDialog(
@@ -1032,22 +1032,7 @@ define(function LiveDevelopment(require, exports, module) {
 
                 dialogPromise.done(function (id) {
                     if (id === Dialogs.DIALOG_BTN_OK) {
-                        // User has chosen to reload Chrome, quit the running instance
-                        _setStatus(STATUS_INACTIVE);
-                        NativeApp.closeLiveBrowser()
-                            .done(function () {
-                                browserStarted = false;
-                                window.setTimeout(function () {
-                                    // After browser closes, try to open the interstitial page again
-                                    _openInterstitialPage();
-                                });
-                            })
-                            .fail(function (err) {
-                                // Report error?
-                                _setStatus(STATUS_ERROR);
-                                browserStarted = false;
-                                _openDeferred.reject("CLOSE_LIVE_BROWSER");
-                            });
+                        NativeApp.openURLInDefaultBrowser(brackets.chrome.extensionInstallURL)
                     } else {
                         _openDeferred.reject("CANCEL");
                     }

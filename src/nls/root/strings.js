@@ -87,12 +87,6 @@ define({
     "LIVE_DEVELOPMENT_INFO_TITLE"       : "Welcome to Live Preview!",
     "LIVE_DEVELOPMENT_INFO_MESSAGE"     : "Live Preview connects {APP_NAME} to your browser. It launches a preview of your HTML file in the browser, then updates the preview instantly as you edit your code.<br /><br />In this early version of {APP_NAME}, Live Preview only works with <strong>Google Chrome</strong> and updates live as you edit <strong>CSS or HTML files</strong>. Changes to JavaScript files are automatically reloaded when you save.<br /><br />(You'll only see this message once.)",
     "LIVE_DEVELOPMENT_TROUBLESHOOTING"  : "For more information, see <a href='{0}' title='{0}'>Troubleshooting Live Development connection errors</a>.",
-    "LIVE_DEVELOPMENT_OS_NOT_SUPPORTED_INFO_MESSAGE" : "Google Chrome for Windows doesn't yet support network sockets. Without a network socket, the Live Development web server can't run. Unfortunately, this means Live " +
-        "Development isn't yet available. Please star <a href=\"https://code.google.com/p/chromium/issues/detail?id=170595\">this issue</a> if you would like Live Development support.<br/><br/>" +
-        "NB: You may wonder why you can not supply your own web server. Live Development works by controlling the actual output response of the web server. It needs to do this so it can inject special tokens " +
-        "into the HTML. There is currently no way to support doing this with an external server.",
-    "LIVE_DEVELOPMENT_OS_NOT_SUPPORTED_MESSAGE" : "Live Development not available on Windows",
-    "LIVE_DEV_OS_NOT_SUPPORTED"         : "Live Development is unavailable for Windows because of a bug in Chrome",
     "LIVE_DEV_STATUS_TIP_NOT_CONNECTED" : "Live Preview",
     "LIVE_DEV_STATUS_TIP_PROGRESS1"     : "Live Preview: Connecting\u2026",
     "LIVE_DEV_STATUS_TIP_PROGRESS2"     : "Live Preview: Initializing\u2026",
