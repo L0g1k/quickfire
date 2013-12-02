@@ -31,7 +31,9 @@ define(function (require, exports, module) {
 
     var BaseServer  = brackets.getModule("LiveDevelopment/Servers/BaseServer").BaseServer,
         FileUtils   = brackets.getModule("file/FileUtils"),
-        ProjectManager = brackets.getModule("project/ProjectManager");
+        ProjectManager = brackets.getModule("project/ProjectManager"),
+        StringUtils = brackets.getModule("utils/StringUtils");
+
 
     var currentProject;
 
@@ -123,8 +125,10 @@ define(function (require, exports, module) {
 
         if (this.chromeWebServer.connected()) {
                 var portString = this._port == 80 ? '' : (':' + this._port);
-                this._baseUrl = encodeURI("http://localhost" + portString + currentProject + "/");
-
+                this._baseUrl = encodeURI("http://localhost" + portString + currentProject);
+                if(StringUtils.endsWith(this._baseUrl, "/") == false) {
+                    this._baseUrl += "/";
+                }
                 readyToServeDeferred.resolve();
         } else {
             // nodeConnection has been connected once (because the deferred

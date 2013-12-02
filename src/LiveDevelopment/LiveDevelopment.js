@@ -773,12 +773,14 @@ define(function LiveDevelopment(require, exports, module) {
             closePromise = new $.Deferred().resolve();
         }
 
-        closePromise.done(function () {
+        closePromise.then(function () {
             if (Inspector.connected()) {
                 Inspector.disconnect().always(deferred.resolve);
             } else {
                 deferred.resolve();
             }
+        }, function(){
+            deferred.resolve();
         });
 
         return deferred.promise();
